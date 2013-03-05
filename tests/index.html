@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>Pilot :: tests</title>
+
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+	<script src="//code.jquery.com/qunit/qunit-git.js"></script>
+	<link href="//code.jquery.com/qunit/qunit-git.css" rel="stylesheet"/>
+
+	<script>
+		if( !window.jQuery ){
+			document.write('<script src="/js/jquery.dev.js"><'+'/script>');
+			document.write('<script src="/js/qunit/qunit.js"><'+'/script>');
+			document.write('<link href="/js/qunit/qunit.css" rel="stylesheet"/>');
+		}
+	</script>
+
+
+	<script src="../Pilot.js"></script>
+	<script src="Pilot.test.js"></script>
+</head>
+<body>
+
+	<h1 id="qunit-header">Pilot :: tests</h1>
+	<h2 id="qunit-banner"></h2>
+	<div id="qunit-testrunner-toolbar"></div>
+	<h2 id="qunit-userAgent"></h2>
+	<ol id="qunit-tests"></ol>
+
+</body>
+</html>

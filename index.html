@@ -1,0 +1,245 @@
+<!doctype html>
+<html xmlns:x="http://xtpl.ru/">
+<head>
+	<meta charset="utf-8"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+
+	<title>Pilot — multifunction JavaScript router</title>
+
+	<meta name="keywords" content="pilot, router, template, browser, client, rubaxa"/>
+
+	<link rel="stylesheet" href="statics/main.css"/>
+	<link rel="stylesheet" href="example/app.css"/>
+
+	<script src="//cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script>
+	<script>!window.jQuery && document.write('<script src="/js/json3.min.js"><'+'/script>');</script>
+
+	<script src="//code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script>!window.jQuery && document.write('<script src="/js/jquery.dev.js"><'+'/script>');</script>
+
+	<script src="http://xtpl.ru/js/xtpl.min.js"></script>
+</head>
+<body class="body">
+
+	<x:tpl ctrl="main">
+		<div x:sticky="true" class="sidebar">
+			<div>
+				<div class="menu">
+					<ul>
+						<li><a href="https://github.com/RubaXa/Pilot">Репозиторий на GitHub</a></li>
+						<li><a href="#app">Пример работы</a></li>
+					</ul>
+				</div>
+
+				<div class="menu" x:repeat="item in ctx.api">
+					<a href="#{{item.label}}" class="menu__name">{{item['class']}}</a>
+					<ul>
+						<li x:repeat="prop in item.props">
+							<a href="#{{prop.label}}">{{prop.name}}</a>
+						</li>
+					</ul>
+					<ul>
+						<li x:repeat="(name, item) in item.fn">
+							<a href="#{{item.label}}">{{name}}</a>
+						</li>
+					</ul>
+				</div>
+				<div style="height: 5px;"></div>
+			</div>
+		</div>
+
+		<div style="margin-left: 280px; position: relative;">
+			<div class="body__glow"></div>
+			<div>&nbsp;</div>
+			<div class="logo"></div>
+			<div class="content">
+				<h2>Введение</h2>
+
+				<div>
+					С каждым днем сайты становятся все сложнее и динамичнее. Уже недостаточно просто “оживить” интерфейс, все чаще требуется создать полноценное одностраничное приложение. А это значит, что задача получения данных и их отображения, в зависимости от маршрута, которая всегда была прерогативой сервера, ложится на клиент. Обычно эту проблему решают с помощью простенького роутера, на основе регулярных выражений, и дальше не развивают, в то время как на back-end, этой теме уделяют гораздо больше внимания. В этой статье я постараюсь восполнить этот пробел.
+				</div>
+				<div style="height: 50px;"></div>
+
+				<div x:repeat="item in ctx.api">
+					<a name="{{item.label}}"></a>
+
+					<h3>{{item['class']}}</h3>
+
+					<div style="margin-bottom: 30px;">
+						<div>
+							<x:v mod="txt.hl" output="text">item.descr</x:v>
+						</div>
+						<br/>
+
+						<div style="margin-left: 20px;">
+							<div x:repeat="prop in item.props">
+								<a name="{{prop.label}}"></a>
+								<h4 class="fn" data-anchor="prop">
+									<x:switch select="prop.type">
+										<x:case test="-1">
+											{{prop.name}}
+										</x:case>
+
+										<x:default>
+											{{prop.name}}:
+											<span class="type">{{prop.type}}</span>
+										</x:default>
+									</x:switch>
+								</h4>
+								<div class="descr">
+									<x:v mod="txt.hl" output="text">prop.descr</x:v>
+								</div>
+
+								<div x:if="prop.code" x:highlight="prop.code.type">
+									<pre>
+										<code>
+											{{prop.code.source}}
+										</code>
+									</pre>
+								</div>
+								<div x:if="prop.code" style="height: 20px;"></div>
+							</div>
+
+							<div x:repeat="fn in item.fn">
+								<div x:repeat="variant in fn.variants">
+									<a name="{{fn.label}}"></a>
+
+									<h4 data-anchor="fn" class="fn">
+										<span class="fn__name">{{fn.name}}</span>
+										<span class="fn__args">
+											<span>( </span>
+											<span x:repeat="(idx, arg) in variant.args">
+												<x:if test="arg.optional">
+													<span class="fn__arg__optional">
+														<span>[</span>
+														<span x:if="idx">, </span>
+														<span>{{arg.name}}:</span>
+														<span class="type">{{arg.type}}</span>
+														<span>]</span>
+													</span>
+												</x:if>
+												<x:if test="!arg.optional">
+													<span x:if="idx">, </span>
+													<span>{{arg.name}}:</span>
+													<span class="type">{{arg.type}}</span>
+												</x:if>
+											</span>
+											<span> ):</span>
+										</span>
+										<span class="type">{{fn.returns}}</span>
+									</h4>
+
+									<div class="descr">
+										<x:v mod="txt.hl" output="text">variant.descr</x:v>
+									</div>
+
+									<ul>
+										<li x:repeat="arg in variant.args">
+											<b>{{arg.name}}</b>
+											<span> — </span>
+											<span>{{fn.args[arg.name]}}</span>
+										</li>
+									</ul>
+
+									<div x:highlight="fn.code.type" x:if="fn.code">
+										<pre>
+											<code>{{fn.code.source}}</code>
+										</pre>
+									</div>
+
+									<div style="height: 20px;"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</x:tpl>
+
+	<div style="height: 750px; margin-left: 280px; position: relative;">
+		<a name="app"></a>
+		<div style="height: 100px;"></div>
+		<div class="app">
+			<div class="app__name">Example</div>
+			<div id="app-location" class="app__location">
+				<div class="js-spinner app__location__spinner"></div>
+				<span class="js-back app__location__nav">&larr;</span>
+				<span class="js-forward app__location__nav">&rarr;</span>
+				<span class="js-address"></span>
+			</div>
+			<div id="app-view" class="app__view"></div>
+			<div style="text-align: center; margin-top: 20px;">
+				<a href="example/app.js">source: app.js</a>
+			</div>
+		</div>
+	</div>
+
+
+
+	<script src="//yandex.st/highlightjs/7.2/highlight.min.js"></script>
+	<script src="./Pilot.js"></script>
+	<script src="./example/app.js"></script>
+
+	<script>
+		/** @namespace hljs -- highlight.js */
+		if( window.hljs ){
+			xtpl.decl('highlight', {
+				init: function (el, type){
+					if( el ){
+						el.className += ' language-' + (type == 'js' ? 'javascript' : type);
+						hljs.highlightBlock(el);
+					}
+				}
+			});
+		}
+
+
+		xtpl.decl('sticky', {
+			init: function (el){
+				var $el = $(el).children();
+				var $win = $(window);
+				var offset = $el.offset().top;
+
+				$win.on('scroll resize', xtpl.utils.throttle(this, function (){
+					var top = $win.scrollTop();
+					var winHeight = $win.height();
+					var elHeight = $el.outerHeight() + offset;
+					var sticky = winHeight >= (elHeight - top);
+
+					$el.parent().toggleClass('sticky_bottom', elHeight > winHeight && sticky);
+				}, 30));
+			}
+		});
+
+
+		xtpl.mod('txt.hl', function (text){
+			return	text.replace(/`([^`]+)`/g, '<span class="code">$1</span>');
+		});
+
+
+		var __ts = new Date;
+		xtpl.ctrl('main', function (ctx){
+			ctx.api = [];
+
+			ctx.getArgs = function (args){
+				return	xtpl.utils.map(args, function (arg){
+					return	arg.name;
+				}).join(', ');
+			};
+
+			$.getJSON('README.json?ver='+Pilot.version, function (json){
+				ctx.api = json;
+				ctx.$apply(function (){
+					var anchor = location.toString().replace(/^.+#/, '');
+					if( anchor ){
+						var offset = $('a[name="'+anchor+'"]').offset();
+						offset && $(window).scrollTop(offset.top-10);
+					}
+					$(window).trigger('scroll');
+				});
+			});
+		});
+	</script>
+</body>
+</html>
