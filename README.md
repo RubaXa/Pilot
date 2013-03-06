@@ -4,6 +4,7 @@
 обеспечивая полный контроль над маршрутом. Может работать как сам по себе, так и другими framework'ами,
 например Backbone, где он станет прекрасной заменой стандартным Router и даже View, просто попробуйте.
 
+---
 
 <a name="Pilot.constructor"></a>
 ### constructor([options`:Object`])`:void`
@@ -17,6 +18,7 @@ var Ivan = new Pilot({
 });
 ```
 
+---
 
 <a name="Pilot.getUrl"></a>
 ### getUrl(id`:String`, params`:Object`[, extra`:Object`])`:String`
@@ -39,6 +41,7 @@ Ivan.getUrl('address', { city: 'berlin' }); // "/berlin/"
 Ivan.getUrl('address', { city: 'berlin', id: 123 }); // "/berlin/street/10/"
 ```
 
+---
 
 <a name="Pilot.go"></a>
 ### go(id`:String`[, params`:Object`])`:jQuery.Deffered`
@@ -58,6 +61,7 @@ Ivan.go('coordinates', { lat: 16 }); // location: "/coordinates/16/"
 Ivan.go('coordinates', { lat: 16, long: 178 }); // location: "/coordinates/16/178/"
 ```
 
+---
 
 <a name="Pilot.nav"></a>
 ### nav(url`:String`[, force`:Boolean`])`:jQuery.Deffered`
@@ -82,6 +86,7 @@ Ivan.nav('/base/moscow/'); // "Greetings from Moscow"
 Ivan.nav('/base/moon/'); // "Route not found"
 ```
 
+---
 
 <a name="Pilot.start"></a>
 ### start([url`:String`])`:void`
@@ -89,6 +94,7 @@ Ivan.nav('/base/moon/'); // "Route not found"
 
 * url — начальная "точка" маршрутизации
 
+---
 
 <a name="Pilot.route:simple"></a>
 ### route(pattern`:String`, handler`:Function`[, withEndEvent`:Boolean`])`:Pilot`
@@ -121,6 +127,8 @@ Ivan.nav('/airport/');        // "routestart -> /airport/"
                               // "routeend -> /home/street/321/"
 ```
 
+---
+
 <a name="Pilot.route:simple-id"></a>
 ### route(id`:String`, pattern`:String`, handler`:Function`[, withEndEvent`:Boolean`])`:Pilot`
 Простой способ добавления именного маршрута.
@@ -136,6 +144,7 @@ Ivan.route('base', '/base/:lat/:long');
 Ivan.go('base', { lat: 16, lon: 179 }); // location: /base/16/179
 ```
 
+---
 
 <a name="Pilot.route:ctrl"></a>
 ### route(pattern`:String`, ctrl`:Object|Pilot.Route`[, options:Object])`:Pilot`
@@ -166,10 +175,11 @@ Ivan.route('/base/:id', {
 Ivan.nav('/base/123'); // "route: Kienitz"
 ```
 
+---
 
 <a name="Pilot.route:ctrl-id"></a>
 ### route(id`:String`, pattern`:String`, ctrl`:Object|Pilot.Route`[, options:Object])`:Pilot`
-Добавить именнованный контроллер маршрута.
+Добавить именованный контроллер маршрута.
 
 ```js
 var airport = Pilot.Route.extend({
@@ -187,6 +197,7 @@ Ivan.nav('/base/1'); // "base: Moscow"
 Ivan.nav('/base/2'); // "base: Yaroslavl"
 ```
 
+---
 
 <a name="Pilot.createGroup"><a/>
 ### createGroup(pattern`:String`)`:Pilot`
@@ -208,21 +219,25 @@ Ivan.nav('/base/'); // "def"
 Ivan.nav('/base/123/'); // "base: 123"
 ```
 
+---
+
 <a name="Pilot.createGroup-id"><a/>
 ### createGroup(id`:String`, pattern`:String`)`:Pilot`
-Созданние именнованной группы
+Создание именованной группы
 
 * id — уникальный идентификатор маршрута
 
+---
 
 <a name="Pilot.closeGroup"><a/>
 ### closeGroup()`:Pilot`
 Закрыть группу и вернуть предыдущую, либо сам роутер
 
+---
 
 <a name="Pilot.on"><a/>
 ### on(events`:String`, fn`:Function`)`:Pilot`
-Добавить обработчик одиного или нескольких событий.
+Добавить обработчик одного или нескольких событий.
 У Pilot есть четыре события: `beforeroute`, `route`, `404` и `error`
 
 * events — одно или несколько событий, можно использовать namespace
@@ -237,6 +252,7 @@ new Pilot
 ;
 ```
 
+---
 
 <a name="Pilot.off"><a/>
 ### off(events`:String`, fn`:Function`)`:Pilot`
@@ -255,6 +271,7 @@ new Pilot
 ;
 ```
 
+---
 
 <a name="Pilot.emit"><a/>
 ### emit(event`:String`[, args`:Array`])`:Pilot`
@@ -273,6 +290,7 @@ var Ace = new Pilot
 Ace.emit('custom', ["foo"]);
 ```
 
+---
 
 <a name="Pilot.history"><a/>
 ### history`:Array`
@@ -289,31 +307,39 @@ console.log(Ace.history);
 // ["http://site.com/airport/", "http://site.com/airport/depot/", ..]
 ```
 
+---
+
 <a name="Pilot.hasBack"><a/>
 ### hasBack()`:Boolean`
 Проверка возможности перехода назад по `history`
+
+---
 
 <a name="Pilot.hasForward"><a/>
 ### hasForward()`:Boolean`
 Проверка возможности перехода вперед по `history`
 
+---
 
 <a name="Pilot.back"><a/>
 ### back()`:jQuery.Deffered`
-Перейти на предыдуший url в `history`
+Перейти на предыдущий url в `history`
 
+---
 
 <a name="Pilot.forward"><a/>
 ### forward()`:jQuery.Deffered`
 Перейти на следующий url, относительно текущий позиции в `history`
 
+---
 
 <a name="Pilot.Route"><a/>
 ## Pilot.Route
 Класс контроллера маршрута, позволяет не только, контролировать события начала,
-изменения и конца маршрута, но и сообщать роутеру, что перед переходом, на нужный урл
-нужно дождаться собра данных, нужных этому контроллеру.
+изменения и конца маршрута, но и сообщать роутеру, что перед переходом, на нужный url
+нужно дождаться сбора данных, нужных этому контроллеру.
 
+---
 
 <a name="Pilot.Route.@events"></a>
 ### @events
@@ -334,6 +360,7 @@ var airbase = Pilot.Route.extend({
 });
 ```
 
+---
 
 <a name="Pilot.Route.inited"><a/>
 ### inited`:Boolean`
@@ -349,11 +376,13 @@ var airbase = Pilot.Route.extend({
 });
 ```
 
+---
 
 <a name="Pilot.Route.router"><a/>
 ### router`:Pilot`
 Ссылка на роутер.
 
+---
 
 <a name="Pilot.Route.boundAll"><a/>
 ### boundAll`:Array`
@@ -375,6 +404,7 @@ var City = Pilot.Route.extend({
 });
 ```
 
+---
 
 <a name="Pilot.Route.bound"><a/>
 ### bound(fn`:String|Function`)`:Function`
@@ -400,6 +430,8 @@ var airport = Pilot.View.extend({
 });
 ```
 
+---
+
 <a name="Pilot.Route.init"><a/>
 ### init()`:void`
 Это метод рассчитан на переопределение и будет вызван один раз в момент инициализации контроллера.
@@ -414,10 +446,12 @@ var airport = Pilot.Route.extend({
 });
 ```
 
+---
+
 <a name="Pilot.Route.loadData"><a/>
 ### loadData(req`:Object`)`:jQuery.Deffered|Null`
 Метод будет вызван перед событием `routestart`, `routechange`. Если вренуть $.Deffered,
-то роутер дождеться окончания сбора данных контроллера и только потом осуществит навигацию.
+то роутер дождётся окончания сбора данных контроллера и только потом осуществит навигацию.
 
 * req — объект запроса
 
@@ -434,6 +468,7 @@ var airport = Pilot.Route.View.extend({
 });
 ```
 
+---
 
 <a name="Pilot.Route.getUrl"></a>
 ### getUrl(id`:String`, params`:Object`[, extra`:Object`])`:String`
@@ -444,7 +479,7 @@ var airport = Pilot.Route.View.extend({
 * params — параметры, которые будут использованы при построении url
 * extra — дополнительные параметры
 
-
+---
 
 <a name="Pilot.Route.getData"><a/>
 ### getData()`:Object`
@@ -459,6 +494,7 @@ var airport = Pilot.Route.extend({
 (new airport({ data: { name: 'NY' } })).getData().name; // "NY"
 ```
 
+---
 
 <a name="Pilot.Route.setData"><a/>
 ### setData(data`:Object`[, merge`:Boolean`])`:Pilot.Route`
@@ -482,12 +518,15 @@ var airport = Pilot.Route.extend({
 // { name: 'Foo', city: 'Bar' }
 ```
 
+---
 
 <a name="Pilot.View"><a/>
 ## Pilot.View
 Наследник Pilot.Route, имплементирует в себе методы для работы с DOM элементами, событиями и шаблонизацией.
 По умолчанию, `Pilot.View` подписан события `routestart` и `routeend` контролируя видимость
 DOM элемента, связанного с ним, выставляя ему `display: none` или убирая его.
+
+---
 
 <a name="Pilot.View.el"><a/>
 ### el`:HTMLElement`
@@ -502,6 +541,7 @@ var airport = Pilot.View.extend({
 (new airport({ el: '#moscow' })).el; // HTMLElement: <div id="moscow">..</div>
 ```
 
+---
 
 <a name="Pilot.View.$el"><a/>
 ### $el`:jQuery`
@@ -516,6 +556,7 @@ var base = Pilot.View.extend({
 (new base({ el: '#moon' })).el; // jQuery[<div id="moon">..</div>]
 ```
 
+---
 
 <a name="Pilot.View.tagName"><a/>
 ### tagName`:String`
@@ -530,6 +571,7 @@ var base = Pilot.View.extend({
 (new base).$el.appendTo('body'); // jQuery[<span>..</span>]
 ```
 
+---
 
 <a name="Pilot.View.tag"><a/>
 ### tag`:String`
@@ -577,6 +619,7 @@ Ivan.nav('/sky/baz/'); // "Sky base Baz"
                        // "end: /sky/baz/"
 ```
 
+---
 
 <a name="Pilot.View.template"><a/>
 ### template`:Fucntion`
@@ -592,6 +635,7 @@ var region = Pilot.View.extend({
 });
 ```
 
+---
 
 <a name="Pilot.View.toggleView"><a/>
 ### toggleView(state`:Boolean`)`:void`
@@ -608,6 +652,7 @@ var region = Pilot.View.extend({
 });
 ```
 
+---
 
 <a name="Pilot.View.setElement"><a/>
 ### setElement(selector`:jQuerySelector`)`:Pilot.View`
@@ -615,6 +660,7 @@ var region = Pilot.View.extend({
 
 * selector - строка содержащая jQuery selector или HTMLElement, [detail](http://api.jquery.com/jQuery/)
 
+---
 
 <a name="Pilot.View.$"><a/>
 ### $(selector`:jQuerySelector`)`:jQuery`
@@ -622,7 +668,7 @@ var region = Pilot.View.extend({
 
 * selector - строка содержащая jQuery selector или HTMLElement, [detail](http://api.jquery.com/jQuery/)
 
-
+---
 
 <a name="Pilot.View.getHtml"><a/>
 ### getHtml([data`:Object`])`:String`
@@ -630,7 +676,7 @@ var region = Pilot.View.extend({
 
 * data — данные для шаблонизации
 
-
+---
 
 <a name="Pilot.View.render"><a/>
 ### render()`:void`
@@ -648,6 +694,7 @@ var city = Pilot.View.extend({
 });
 ```
 
+---
 
 <a name="Pattern-syntax></a>
 ## Pattern-syntax route
@@ -659,7 +706,7 @@ var city = Pilot.View.extend({
 	<li>`/search/(result/:page/)?` — группировка</li>
 </ul>
 
-
+---
 
 <a name="Request.object"></a>
 ## Request object
@@ -682,13 +729,13 @@ request: `/gallery/cubism/20/page/123?search=text`
 Параметры маршрута: `{ tag: "cubism", perPage: 20, page: 123 }`
 
 ### referrer`:String`
-Содержит url перыдущего запроса: `http://domain.com/gallery/cubism/20/page/12`
+Содержит url предыдущего запроса: `http://domain.com/gallery/cubism/20/page/12`
 
-
+---
 
 <a name="HistoryAPI"></a>
 ## History API
-По умолчанию, библиотека не содержит никаких полифилов и расчитывает только на нативную поддержку.
+По умолчанию, библиотека не содержит никаких полифилов и рассчитывает только на нативную поддержку.
 
 
 <a name="Pilot.pushState"></a>
@@ -711,7 +758,7 @@ Pilot.pushState = true;
 
 * req — объект запроса
 
-
+---
 
 <a name="changelog"></a>
 ## Changelog
