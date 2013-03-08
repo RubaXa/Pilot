@@ -137,6 +137,7 @@
 			_extend(this, {
 				  el: null
 				, path: '/'
+				, production: false
 				, useHistory: false
 			}, options);
 
@@ -436,7 +437,7 @@
 
 
 		log: function (str){
-			if( !Router.production && window.console ){
+			if( !this.production && window.console ){
 				console.log(str);
 			}
 		},
@@ -1016,9 +1017,6 @@
 
 	Router.Route	= Route;
 	Router.View		= View;
-
-	// Disabled log
-	Router.production = window.Pilot && window.Pilot.production;
 
 
 	// @export
