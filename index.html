@@ -228,7 +228,7 @@
 				}).join(', ');
 			};
 
-			$.getJSON('./statics/README.json?ver='+Pilot.version, function (json){
+			$.getJSON('./statics/docs.json?ver='+Pilot.version, function (json){
 				ctx.api = json;
 				ctx.$apply(function (){
 					var anchor = location.toString().replace(/^.+#/, '');
