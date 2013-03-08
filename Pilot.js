@@ -137,7 +137,7 @@
 			_extend(this, {
 				  el: null
 				, path: '/'
-				, production: false
+				, production: window.Pilot && window.Pilot.production
 				, useHistory: false
 			}, options);
 
