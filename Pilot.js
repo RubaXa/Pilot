@@ -3,22 +3,24 @@
  * @author	RubaXa	<trash@rubaxa.org>
  *
  * @example
- * 	var Moses = new Pilot;
+ *	var Moses = new Pilot;
  *
- * 	Moses.createGroup('/', { id: 'home' })
- * 		.route('*', app.LeftCol)
- * 		.route('.', app.Index)
- * 		.createGroup('blog/', { id: 'blog' } )
- * 			.route('.', app.BlogPosts)
- * 			.route('post/:id', app.BlogPost, { id: 'blog-post' })
- * 			.closeGroup()
- * 		.route('about', { id: 'about' })
- * 	;
+ *	Moses.createGroup('/', { id: 'home' })
+ *		.route('*', app.LeftCol)
+ *		.route('.', app.Index)
+ *		.createGroup('blog/', { id: 'blog' } )
+ *			.route('.', app.BlogPosts)
+ *			.route('post/:id', app.BlogPost, { id: 'blog-post' })
+ *			.closeGroup()
+ *		.route('about', { id: 'about' })
+ *	;
  *
- * 	Moses.nav('/blog/');
- * 	// OR
- * 	Moses.go('blog-post', { id: 2 });
+ *	Moses.nav('/blog/');
+ *	// OR
+ *	Moses.go('blog-post', { id: 2 });
  */
+
+/*global window, jQuery, define*/
 (function (window, $){
 	"use strict";
 
@@ -31,7 +33,7 @@
 		, document	= window.document
 		, location	= window.location
 
-		, _rhttp	= /^https?/i
+		, _rhttp	= /^(https?|file)/i
 		, _slice	= [].slice
 		, _toStr	= {}.toString
 		, _bind		= function (ctx, fn){
@@ -48,9 +50,9 @@
 	 * Base class
 	 *
 	 * @param	{Object}	methods
-	 * @return	Function}
+	 * @return	{Function}
 	 */
-	var Class = function (methods){
+	var klass = function (methods){
 		var New = function (){
 			if( New.fn.singleton ){
 				if( New.__inst__ ){
@@ -67,7 +69,7 @@
 		New.fn.__self = New.fn.constructor = New;
 
 		New.extend = function (methods){
-			var Ext = Class();
+			var Ext = klass();
 
 			noop.prototype = this.fn;
 			Ext.prototype = new noop;
@@ -87,7 +89,7 @@
 	/**
 	 * @class	EventEmitter
 	 */
-	var EventEmitter = Class({
+	var EventEmitter = klass({
 		__lego: function (){
 			var $emitter = $(this);
 
@@ -135,7 +137,6 @@
 			_extend(this, {
 				  el: null
 				, path: '/'
-				, production: false
 				, useHistory: false
 			}, options);
 
@@ -294,6 +295,9 @@
 			var
 				  queue = []
 				, task
+				, addTask = function (unit){
+					units.push(unit);
+				}
 			;
 
 			// Clone
@@ -301,9 +305,7 @@
 
 			while( task = units.shift() ){
 				if( task && task.isActive() ){
-					_each(task.units, function (unit){
-						units.push(unit);
-					});
+					_each(task.units, addTask);
 
 					req.params = task.requestParams;
 
@@ -420,7 +422,7 @@
 
 				var delta = new Date - this.__ts;
 				this.emit('route', [req, delta]);
-				this.log('Pilot.nav: '+ delta +'ms ('+ req.url +')');
+				this.log('Pilot.nav: '+ delta +'ms ('+ req.path + req.search +')');
 			}
 		},
 
@@ -434,7 +436,7 @@
 
 
 		log: function (str){
-			if( !this.production && window.console ){
+			if( !Router.production && window.console ){
 				console.log(str);
 			}
 		},
@@ -610,7 +612,7 @@
 				url = '//' + location.hostname + url;
 			}
 			else {
-				url	= location.pathname.substr(0, location.pathname.lastIndexOf('/')+1) + url;
+				url	= location.pathname.substr(0, location.pathname.lastIndexOf('/') + 1) + url;
 			}
 
 			if( '//' == url.substr(0, 2) ){
@@ -622,14 +624,16 @@
 			if( !_rhttp.test(url) ){
 				url = location.protocol +'//'+ url;
 			}
-
 		}
+
 
 		var
 			  search = (url.split('?')[1]||'').replace(/#.*/, '')
 			, query = {}
-			, path = url.substr(url.indexOf('/', 8)).replace(/\?.*/, '')
+			, offset = url.match(_rhttp)[0].length + 3 // (https?|file) + "://"
+			, path = url.substr(url.indexOf('/', offset)).replace(/\?.*/, '')
 		;
+
 
 		if( search ){
 			_each(search.split('&'), function (part, tmp){
@@ -725,7 +729,7 @@
 		bound: function (fn){
 			if( typeof fn === 'string' ){
 				if( this[fn] === undef ){
-					this._exception('bound', fn + ' -- method not found')
+					this._exception('bound', fn + ' -- method not found');
 				}
 				fn = this[fn];
 			}
@@ -744,7 +748,7 @@
 
 
 		getUrl: function (id, params, extra){
-			return	this.router.getUrl(id, params, extra)
+			return	this.router.getUrl(id, params, extra);
 		},
 
 
@@ -793,8 +797,8 @@
 
 				if( this.tag ){
 					tag = this.tag.match(/^(#[^\s]+)?\s*([^\.]+)\.?([^$]+)?/);
-					if( tag[1] ) parentNode	= tag[1];
-					if( tag[3] ) className	= tag[3].split('.').join(' ');
+					if( tag[1] ){ parentNode = tag[1];}
+					if( tag[3] ){ className = tag[3].split('.').join(' '); }
 					tag	= tag[2];
 				}
 
@@ -823,7 +827,7 @@
 			}
 
 			this.on('routestart.view routeend.view', this.bound(function (evt){
-				this.toggleView(evt.type != 'routeend')
+				this.toggleView(evt.type != 'routeend');
 			}));
 
 			// Call the parent method
@@ -841,7 +845,7 @@
 
 			if( el ){
 				this.$el = $(el);
-				this.delegateEvents()
+				this.delegateEvents();
 			}
 			else {
 				this.$el[0] = undef;
@@ -910,11 +914,17 @@
 	function _each(obj, fn, ctx){
 		if( obj ){
 			var i = 0, n = obj.length;
-			if( (i in obj) && n !== undef ) for( ; i < n; i++ ){
-				fn.call(ctx, obj[i], i, obj);
+			if( (i in obj) && n !== undef ){
+				for( ; i < n; i++ ){
+					fn.call(ctx, obj[i], i, obj);
+				}
 			}
-			else for( i in obj ) if( obj.hasOwnProperty(i) ){
-				fn.call(ctx, obj[i], i, obj);
+			else {
+				for( i in obj ){
+					if( obj.hasOwnProperty(i) ){
+						fn.call(ctx, obj[i], i, obj);
+					}
+				}
 			}
 		}
 	}
@@ -926,8 +936,12 @@
 
 		for( ; i < n; i++ ){
 			src = args[i];
-			if( src && typeof src == 'object' ) for( key in src ) if( src.hasOwnProperty(key) ){
-				dst[key] = src[key];
+			if( src && typeof src == 'object' ){
+				for( key in src ){
+					if( src.hasOwnProperty(key) ){
+						dst[key] = src[key];
+					}
+				}
 			}
 		}
 
@@ -943,8 +957,8 @@
 	 * https://github.com/visionmedia/express/blob/master/lib/utils.js#L248
 	 */
 	function _pathRegexp(path, keys, sensitive, strict){
-		if( path instanceof RegExp ) return path;
-		if( $.isArray(path) ) path = '('+ path.join('|') +')';
+		if( path instanceof RegExp ){ return path; }
+		if( $.isArray(path) ){ path = '('+ path.join('|') +')'; }
 
 		path = path
 			.concat(strict ? '' : '/?')
@@ -1003,8 +1017,15 @@
 	Router.Route	= Route;
 	Router.View		= View;
 
+	// Disabled log
+	Router.production = window.Pilot && window.Pilot.production;
+
 
 	// @export
 	Router.version	= '1.0.0';
 	window.Pilot	= Router;
+
+	if( typeof define === "function" && define.amd ){
+		define("Pilot", [], function (){ return Router; });
+	}
 })(window, jQuery);

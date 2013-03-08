@@ -1,13 +1,57 @@
-(function (){
+/*jslint curly: false */
+/*global jQuery, location, Pilot, module, test, expect, ok, equal, start, stop*/
+
+(function ($){
 	/**
 	 *       ~~~ TESTS ~~~
 	 */
 	module('Pilot');
 
 
-	/**
-	 * Test: Route path
-	 */
+	test('crazy params', function (){
+		var Router = new Pilot, _log = {}, log = function (name, str){
+			if( !_log[name] ) _log[name] = [];
+			_log[name].push(str);
+		};
+		// /((show|link)/)?(home|links|shared|history|attaches|files)(/.*)
+
+		Router.route('/:mode(show|link)', function (evt, req){
+			log('mode', req.params.mode);
+		});
+
+		Router.route('/:mode(show|link)?/:storage(home|links|shared)', function (evt, req){
+			log('mode?+storage', (req.params.mode || '')+':'+req.params.storage);
+		});
+
+		Router.route('/:mode(show|link)?/:storage(home|links|shared)/:id(*)?', function (evt, req){
+			log('mode?+storage+id?', (req.params.mode || '')+':'+req.params.storage+':'+(req.params.id || ''));
+		});
+
+
+		// mode
+		Router.nav('/foo');
+		Router.nav('/show/');
+		Router.nav('/bar/');
+		Router.nav('/link');
+		Router.nav('/show/');
+
+		// mode?+storage
+		Router.nav('/home');
+		Router.nav('/show/home');
+		Router.nav('/show/bar');
+		Router.nav('/shared/');
+
+		// // mode?+storage+id?
+		Router.nav('/shared/myid');
+		Router.nav('/links/my/id');
+		Router.nav('/link/links/my/id');
+
+		equal(_log['mode'].join('->'), 'show->link->show');
+		equal(_log['mode?+storage'].join('->'), ':home->show:home->:shared');
+		equal(_log['mode?+storage+id?'].join('->'), ':home:->show:home:->:shared:->:shared:myid->:links:my/id->link:links:my/id');
+	});
+
+
 	test('request.params', function (){
 		expect(22);
 
@@ -138,7 +182,7 @@
 			  Router = new Pilot
 			, unit = {}
 			, _log = []
-			, getLog = function (){ return _log.join('\n') }
+			, getLog = function (){ return _log.join('\n'); }
 			, addLog = function (unit, evt, req){
 				_log.push('['+unit.name+':'+evt.type+':'+req.pathname+']');
 			}
@@ -294,10 +338,10 @@
 		var
 			  App = new Pilot
 			, _log = []
-			, onRoute = function (evt){ _log.push((this.id || this.name) +':'+ evt.type.substr(5)) }
+			, onRoute = function (evt){ _log.push((this.id || this.name) +':'+ evt.type.substr(5)); }
 			, unit = Pilot.Route.extend({
 				init: function (){
-					this.on('routestart routechange routeend', onRoute)
+					this.on('routestart routechange routeend', onRoute);
 				}
 			})
 		;
@@ -341,7 +385,7 @@
 	test('Router.history', function (){
 		var Router = new Pilot, _log = [];
 
-		Router.on('route', function (evt, req){ _log.push(req.path.substr(1)) });
+		Router.on('route', function (evt, req){ _log.push(req.path.substr(1)); });
 
 		Router.nav('/1');
 
@@ -406,7 +450,7 @@
 		ok(Router.hasForward(), 'hasForward = true');
 
 		Router.route('*', {
-			loadData: function (req){
+			loadData: function (){
 				var df = $.Deferred();
 				setTimeout(df.resolve, 28);
 				return	df;
@@ -429,7 +473,7 @@
 				ok(!Router.hasBack(), 'hasBack = false');
 				ok(Router.hasForward(), 'hasForward = true');
 			});
-		})
+		});
 	});
 
 
@@ -469,4 +513,4 @@
 			equal(log.join('->'), '[beforeroute]->loadData->resolve->route->[route]');
 		}, 700);
 	});
-})();
+})(jQuery);
