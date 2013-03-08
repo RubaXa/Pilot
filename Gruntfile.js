@@ -7,7 +7,7 @@ module.exports = function (grunt){
 
 		jshint: {
 			all: [
-				  '<%= pkg.name %>.js'
+				  'Pilot.js'
 				, 'tests/*.js'
 			],
 
@@ -39,11 +39,11 @@ module.exports = function (grunt){
 
 		uglify: {
 			options: {
-				banner: '/*! <%= pkg.name %> <%= pkg.version %> - <%= pkg.license %> | <%= pkg.repository.url %> */\n'
+				banner: '/*! Pilot <%= pkg.version %> - <%= pkg.license %> | <%= pkg.repository.url %> */\n'
 			},
 			dist: {
 				files: {
-					  '<%= pkg.name %>.min.js': ['<%= pkg.name %>.js']
+					  'Pilot.min.js': ['Pilot.js']
 				}
 			}
 		}
