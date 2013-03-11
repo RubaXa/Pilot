@@ -215,7 +215,9 @@
 
 
 			// build path
-			path = (this.path + (path == '.' ? '' : path)).replace(/\/\//, '/');
+			if( $.type(path) !== 'regexp' ){
+				path = (this.path + (path == '.' ? '' : path)).replace(/\/\//, '/');
+			}
 
 			// path keys
 			var keys = [], router = this, idx;
@@ -225,6 +227,7 @@
 				router.items = this.items;
 				router.itemsIdx = this.itemsIdx;
 				router.parentRouter = this;
+				path += '*';
 			}
 
 			if( unit ){
@@ -232,7 +235,7 @@
 					  id:		id
 					, path:		path
 					, keys:		keys
-					, regexp:	_pathRegexp(path + (isGroup ? '*' : ''), keys)
+					, regexp:	_pathRegexp(path, keys)
 					, unit:		unit || Router.View
 					, options:	options
 				});
