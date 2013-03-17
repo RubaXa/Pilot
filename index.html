@@ -22,7 +22,7 @@
 <body class="body">
 
 	<x:tpl ctrl="main">
-		<div x:sticky="true" class="sidebar">
+		<div id="sidebar" class="sidebar">
 			<div>
 				<div class="menu">
 					<ul>
@@ -195,26 +195,13 @@
 		}
 
 
-		xtpl.decl('sticky', {
-			init: function (el){
-				var $el = $(el).children();
-				var $win = $(window);
-				var offset = $el.offset().top;
-
-				$win.on('scroll resize', xtpl.utils.throttle(this, function (){
-					var top = $win.scrollTop();
-					var winHeight = $win.height();
-					var elHeight = $el.outerHeight() + offset;
-					var sticky = winHeight >= (elHeight - top);
-
-					$el.parent().toggleClass('sticky_bottom', elHeight > winHeight && sticky);
-				}, 30));
-			}
+		xtpl.mod('txt.hl', function (text){
+			return	text.replace(/`([^`]+)`/g, '<span class="code">$1</span>');
 		});
 
 
-		xtpl.mod('txt.hl', function (text){
-			return	text.replace(/`([^`]+)`/g, '<span class="code">$1</span>');
+		$(window).resize(function (){
+			$('#sidebar').css('height', $(window).height());
 		});
 
 
@@ -236,7 +223,7 @@
 						var offset = $('a[name="'+anchor+'"]').offset();
 						offset && $(window).scrollTop(offset.top-10);
 					}
-					$(window).trigger('scroll');
+					$(window).trigger('resize');
 				});
 			});
 		});

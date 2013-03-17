@@ -12,8 +12,10 @@ html, body {
 .sidebar {
 	top: 0;
 	left: 0;
-	bottom: 0;
-	position: absolute;
+	height: 100%;
+	position: fixed;
+	overflow: auto;
+	overflow-x: hidden;
 	width: 250px;
 	background-color: rgba(255,255,255,.8);
 	*background-color: #fff;
