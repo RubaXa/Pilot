@@ -596,6 +596,7 @@ var base = Pilot.View.extend({
 ```
 
 
+<a name="Pilot.View.singleton"><a/>
 ### singleton`:Boolean`
 
 ```js
