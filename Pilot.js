@@ -159,7 +159,7 @@
 				}
 
 				options.el && $(options.el).delegate('a[href],[data-nav]', 'click', _bind(this, function (evt){
-					this.nav(evt.currentTarget.href);
+					this.nav(evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href'));
 					evt.preventDefault();
 				}));
 			}
