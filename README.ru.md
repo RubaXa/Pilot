@@ -1,4 +1,4 @@
-<a name="Pilot"></a>
+<a name="install" data-name="Installation"></a>
 ## Установка, тестирование, сборка
 `npm install pilotjs`<br/>
 `cd pilotjs`<br/>
@@ -12,7 +12,8 @@
 ## Pilot
 Многофункциональный JavaScript router, решает проблему маршрутизации вашего приложения,
 обеспечивая полный контроль над маршрутом. Может работать как сам по себе, так и другими framework'ами,
-например Backbone, где он станет прекрасной заменой стандартным Router и даже View, просто попробуйте.
+например Backbone, где он станет прекрасной заменой стандартным `Backbone.Router` и даже `Backbone.View`,
+просто попробуйте.
 
 ---
 
@@ -595,6 +596,7 @@ var base = Pilot.View.extend({
 (new base).el; // HTMLElement: <span class="base base_military">..</span>
 ```
 
+---
 
 <a name="Pilot.View.singleton"><a/>
 ### singleton`:Boolean`
@@ -713,7 +715,7 @@ var city = Pilot.View.extend({
 	<li>`/search/` — строгое соответсвие</li>
 	<li>`/gallery/:tag/` — параметризованный</li>
 	<li>`/search/result/:page?` — параметризованный (необязательный)</li>
-	<li>`/user/:id(\d+)` — валидация параметров</li>
+	<li>`/user/:id(\\d+)` — валидация параметров</li>
 	<li>`/search/(result/:page/)?` — группировка</li>
 </ul>
 

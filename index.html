@@ -28,6 +28,7 @@
 					<ul>
 						<li><a href="https://github.com/RubaXa/Pilot">Репозиторий на GitHub</a></li>
 						<li><a href="#app">Пример работы</a></li>
+						<li><a href="#{{ctx.lang == 'ru' ? 'en' : 'ru'}}/">{{ctx.lang == 'ru' ? 'English version' : 'Русская версия'}}</a></li>
 					</ul>
 				</div>
 
@@ -53,11 +54,17 @@
 			<div>&nbsp;</div>
 			<div class="logo"></div>
 			<div class="content">
-				<h2>Введение</h2>
-
-				<div>
-					С каждым днем сайты становятся все сложнее и динамичнее. Уже недостаточно просто “оживить” интерфейс, все чаще требуется создать полноценное одностраничное приложение. А это значит, что задача получения данных и их отображения, в зависимости от маршрута, которая всегда была прерогативой сервера, ложится на клиент. Обычно эту проблему решают с помощью простенького роутера, на основе регулярных выражений, и дальше не развивают, в то время как на back-end, этой теме уделяют гораздо больше внимания. В этой статье я постараюсь восполнить этот пробел.
+				<div x:if="ctx.lang == 'ru'">
+					<h2>Введение</h2>
+					<div>С каждым днем сайты становятся все сложнее и динамичнее. Уже недостаточно просто “оживить” интерфейс, все чаще требуется создать полноценное одностраничное приложение. А это значит, что задача получения данных и их отображения, в зависимости от маршрута, которая всегда была прерогативой сервера, ложится на клиент. Обычно эту проблему решают с помощью простенького роутера, на основе регулярных выражений, и дальше не развивают, в то время как на back-end, этой теме уделяют гораздо больше внимания. В этой статье я постараюсь восполнить этот пробел.</div>
 				</div>
+
+				<div x:if="ctx.lang != 'ru'">
+					<h2>Introduction</h2>
+					<div>With every single day web-sites are becoming more complex and dynamic. It is not enough to simply "revive" the interface. Instead, a fully functional one-page application is required to be created. This means that the task of data collection and display, depending on the route, which has always been the prerogative of the server, lies down on the client. Usually this problem is solved by a simple router, based on regular expressions, and is not developing further, while at back-end, the topic has received much more attention. In this article I will try to fill this gap.</div>
+				</div>
+
+
 				<div style="height: 50px;"></div>
 
 				<div x:repeat="item in ctx.api">
@@ -67,7 +74,7 @@
 
 					<div style="margin-bottom: 30px;">
 						<div>
-							<x:v mod="txt.hl" output="text">item.descr</x:v>
+							<x:v mod="txt.hl" output="text">item.descr[ctx.lang]</x:v>
 						</div>
 						<br/>
 
@@ -87,13 +94,13 @@
 									</x:switch>
 								</h4>
 								<div class="descr">
-									<x:v mod="txt.hl" output="text">prop.descr</x:v>
+									<x:v mod="txt.hl" output="text">prop.descr[ctx.lang]</x:v>
 								</div>
 
 								<div x:if="prop.code" x:highlight="prop.code.type">
 									<pre>
 										<code>
-											{{prop.code.source}}
+											{{prop.code.source[ctx.lang]}}
 										</code>
 									</pre>
 								</div>
@@ -130,20 +137,20 @@
 									</h4>
 
 									<div class="descr">
-										<x:v mod="txt.hl" output="text">variant.descr</x:v>
+										<x:v mod="txt.hl" output="text">variant.descr[ctx.lang]</x:v>
 									</div>
 
 									<ul>
 										<li x:repeat="arg in variant.args">
 											<b>{{arg.name}}</b>
 											<span> — </span>
-											<span>{{fn.args[arg.name]}}</span>
+											<span>{{fn.args[arg.name][ctx.lang]}}</span>
 										</li>
 									</ul>
 
 									<div x:highlight="fn.code.type" x:if="fn.code">
 										<pre>
-											<code>{{fn.code.source}}</code>
+											<code>{{fn.code.source[ctx.lang]}}</code>
 										</pre>
 									</div>
 
@@ -207,13 +214,27 @@
 
 		var __ts = new Date;
 		xtpl.ctrl('main', function (ctx){
+			var lang = (window.navigator.userLanguage || window.navigator.language).split('-')[0];
+			var _rlang = /(?:\/|^)(en|ru)\//;
+
 			ctx.api = [];
+			ctx.lang = /(en|ru)/.test(lang) ? lang : 'en';
+
 
 			ctx.getArgs = function (args){
 				return	xtpl.utils.map(args, function (arg){
 					return	arg.name;
 				}).join(', ');
 			};
+
+
+			$(window).bind('hashchange', function (){
+				var href = location.toString().split('#').pop();
+
+				ctx.lang = (href.match(_rlang) || [,ctx.lang])[1];
+				ctx.$apply && ctx.$apply();
+			}).trigger('hashchange');
+
 
 			$.getJSON('./statics/docs.json?ver='+Pilot.version, function (json){
 				ctx.api = json;
