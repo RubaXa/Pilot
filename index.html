@@ -25,10 +25,16 @@
 		<div id="sidebar" class="sidebar">
 			<div>
 				<div class="menu">
-					<ul>
+					<ul x:if="ctx.lang == 'ru'">
 						<li><a href="https://github.com/RubaXa/Pilot">Репозиторий на GitHub</a></li>
 						<li><a href="#app">Пример работы</a></li>
-						<li><a href="#{{ctx.lang == 'ru' ? 'en' : 'ru'}}/{{ctx.relpath}}">{{ctx.lang == 'ru' ? 'English version' : 'Русская версия'}}</a></li>
+						<li><a href="#en/{{ctx.relpath}}">{{ctx.lang == 'ru' ? 'English version' : 'Русская версия'}}</a></li>
+					</ul>
+
+					<ul x:if="ctx.lang != 'ru'">
+						<li><a href="https://github.com/RubaXa/Pilot">GitHub Repository</a></li>
+						<li><a href="#app">Example app</a></li>
+						<li><a href="#ru/{{ctx.relpath}}">Русская версия</a></li>
 					</ul>
 				</div>
 
