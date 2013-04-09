@@ -136,6 +136,7 @@
 
 			_extend(this, {
 				  el: null
+				, selector: 'a[href],[data-nav]'
 				, path: '/'
 				, production: window.Pilot && window.Pilot.production
 				, useHistory: false
@@ -158,7 +159,8 @@
 					}));
 				}
 
-				options.el && $(options.el).delegate('a[href],[data-nav]', 'click', _bind(this, function (evt){
+				// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
+				options.el && $(options.el).delegate(options.selector, 'click', _bind(this, function (evt){
 					this.nav(evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href'));
 					evt.preventDefault();
 				}));
