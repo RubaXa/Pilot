@@ -1025,7 +1025,7 @@
 
 
 	// @export
-	Router.version	= '1.0.0';
+	Router.version	= '1.1.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){

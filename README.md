@@ -774,6 +774,11 @@ Set a new location.
 ## Changelog
 
 
+### 1.1.0
+<ul>
+	<li>[#3](https://github.com/RubaXa/Pilot/pull/3): Allow customize selector for links.</li>
+</ul>
+
 
 ### 1.0.0
 First release
