@@ -20,7 +20,7 @@
  *	Moses.go('blog-post', { id: 2 });
  */
 
-/*global window, jQuery, define*/
+/*global window, jQuery, define, unescape*/
 (function (window, $){
 	"use strict";
 
@@ -42,6 +42,8 @@
 				return fn.apply(ctx, args.concat(_slice(arguments)));
 			};
 		}
+
+		, _isArray	= $.isArray
 	;
 
 
@@ -77,7 +79,8 @@
 			_extend(Ext, this);
 			_extend(Ext.fn = Ext.prototype, methods);
 
-			Ext.fn.__self = New.fn.constructor = Ext;
+			Ext.fn.__fn = Ext.fn.__super__ = this.fn;
+			Ext.fn.__self = Ext.fn.__self__ = New.fn.constructor = Ext;
 
 			return	Ext;
 		};
@@ -87,9 +90,9 @@
 
 
 	/**
-	 * @class	EventEmitter
+	 * @class	Emitter
 	 */
-	var EventEmitter = klass({
+	var Emitter = klass({
 		__lego: function (){
 			var $emitter = $(this);
 
@@ -106,15 +109,18 @@
 			var
 				  method = ('on-'+name).replace(/-(.)/g, function (a, b){ return b.toUpperCase(); })
 				, evt = $.Event(name.replace(/-/g, ''))
+				, res
 			;
 
 			evt.target = this;
 
 			if( (this[method] === undef) || (this[method].apply(this, [evt].concat(args)) !== false) ){
 				if( !evt.isImmediatePropagationStopped() ){
-					return this.fire(evt, args);
+					res	= this.fire(evt, args);
 				}
 			}
+
+			return res;
 		}
 	});
 
@@ -124,7 +130,7 @@
 	/**
 	 * @class	Pilot
 	 */
-	var Router = EventEmitter.extend({
+	var Router = Emitter.extend({
 
 		/**
 		 * @constructor
@@ -132,7 +138,7 @@
 		 */
 		__lego: function (options){
 			// call the parent method
-			EventEmitter.fn.__lego.call(this);
+			Emitter.fn.__lego.call(this);
 
 			_extend(this, {
 				  el: null
@@ -273,7 +279,7 @@
 		},
 
 
-		_getUnits: function (req, items){
+		_getUnits: function (req/**Pilot.Request*/, items){
 			var units = [];
 
 			_each(items, function (item){
@@ -297,20 +303,21 @@
 		},
 
 
-		_loadUnits: function (req, units){
+		_loadUnits: function (req/**Pilot.Request*/, originUnits){
 			var
 				  queue = []
 				, task
+				, units
 				, addTask = function (unit){
 					units.push(unit);
 				}
 			;
 
 			// Clone
-			units = units.concat();
+			units = originUnits.concat();
 
 			while( task = units.shift() ){
-				if( task && task.isActive() ){
+				if( task && task.isActive(originUnits) ){
 					_each(task.units, addTask);
 
 					req.params = task.requestParams;
@@ -327,12 +334,14 @@
 						}
 					}
 
-					if( $.isArray(task) ){
+					if( _isArray(task) ){
 						units.push.apply(units, task);
 					}
 					else if( task ){
 						queue.push(task);
 					}
+
+					delete req.params;
 				}
 			}
 
@@ -340,19 +349,19 @@
 		},
 
 
-		_doRouteUnits: function (request, items){
+		_doRouteUnits: function (request/**Pilot.Request*/, items){
 			_each(items, function (item){
 				var
 					  unit = item.unit
 					, routeChange = true
 					, params = []
-					, req = _extend({}, request)
+					, req = request.clone()
 				;
 
 				req.params = params;
 				unit.request = req;
 
-				if( _matchRoute(req.path, item.regexp, item.keys, params) ){
+				if( _matchRoute(req.path, item.regexp, item.keys, params) && unit.isActive(this.activeUnits) ){
 					if( unit.inited !== true ){
 						unit.__init();
 					}
@@ -367,6 +376,9 @@
 							err.name = 'routestart';
 							this.emit('error', err, req);
 						}
+					}
+					else if( true ){
+						// @todo: Проверить изменение параметров, если их нет, не вызывать событие
 					}
 
 					try {
@@ -399,7 +411,7 @@
 		},
 
 
-		_doRouteDone: function (req){
+		_doRouteDone: function (req/**Pilot.Request*/){
 			if( this.activeRequest === req ){
 				if( this.request.url != req.url ){
 					this.referrer = this.request;
@@ -433,7 +445,7 @@
 		},
 
 
-		_doRouteFail: function (req){
+		_doRouteFail: function (req/**Pilot.Request*/){
 			if( this.activeRequest === req ){
 				this.activeRequest = null;
 				this.emit('route-fail', req);
@@ -460,12 +472,23 @@
 
 
 		/**
-		 * Get route by id
+		 * Get ctrl route by id
 		 *
 		 * @param {String} id
-		 * @return {Object}
+		 * @return {Pilot.View}
 		 */
 		get: function (id){
+			var item = this.getItem(id);
+			return	item && item.unit;
+		},
+
+
+		/**
+		 * Get route item
+		 * @param {string} id
+		 * @returns {Object}
+		 */
+		getItem: function (id){
 			return	this.items[this.itemsIdx[id]];
 		},
 
@@ -479,7 +502,7 @@
 		 * @return	{String}
 		 */
 		getUrl: function (id, params, extra){
-			var route = this.get(id), keys, path, idx = 0;
+			var route = this.getItem(id), keys, path, idx = 0;
 
 			if( route ){
 				params	= _extend({}, params, extra);
@@ -610,9 +633,19 @@
 	 * Parse URL method
 	 *
 	 * @param {String} url
-	 * @return {Object}
+	 * @return {Pilot.Request}
 	 */
 	Router.parseURL = function(url){
+		return	new Request(url);
+	};
+
+
+	/**
+	 * @class	Pilot.Request
+	 * @constructor
+	 * @param {string} url
+	 */
+	function Request(url){
 		if( !_rhttp.test(url) ){
 			if( '/' == url.charAt(0) ){
 				url = '//' + location.hostname + url;
@@ -634,36 +667,38 @@
 
 
 		var
-			  search = (url.split('?')[1]||'').replace(/#.*/, '')
-			, query = {}
-			, offset = url.match(_rhttp)[0].length + 3 // (https?|file) + "://"
-			, path = url.substr(url.indexOf('/', offset)).replace(/\?.*/, '')
+			  search	= (url.split('?')[1]||'').replace(/#.*/, '')
+			, query		= _parseQueryString(search)
+			, offset	= url.match(_rhttp)[0].length + 3 // (https?|file) + "://"
+			, path		= url.substr(url.indexOf('/', offset)).replace(/\?.*/, '')
+			, _this		= this
 		;
 
 
 		if( search ){
-			_each(search.split('&'), function (part, tmp){
-				tmp = part.split('=');
-				query[tmp[0]] = decodeURIComponent(typeof tmp[1] === 'undefined' ? '' : tmp[1]);
-			});
-			search = '?' + search;
+			search	= '?' + search;
 		}
 
-		return	{
-			  url:		url
-			, href:		url
-			, query:	query
-			, search:	search
-			, path:		path
-			, pathname:	path
-			, hash:		url.replace(/^[^#]+#/, '')
-		};
+		_this.url		= url;
+		_this.href		= url;
+		_this.query		= query;
+		_this.search	= search;
+		_this.path		= path;
+		_this.pathname	= path;
+		_this.hash		= url.replace(/^[^#]+#/, '');
+		_this.params	= {};
+	}
+	Request.fn = Request.prototype = {
+		constructor: Request,
+		clone: function (){
+			return	new Request(this.url);
+		}
 	};
 
 
 	/**
 	 * Set `window.location`
-	 * @param	{Object}	req
+	 * @param	{Pilot.Request}	 req
 	 */
 	Router.setLocation = function (req){
 		if( Router.pushState && history.pushState ){
@@ -682,7 +717,7 @@
 	Router.getLocation = function (){
 		var url = location.toString();
 		if( !Router.pushState ){
-			url = url.split('#!').pop();
+			url = url.split(/#!?/).pop();
 		}
 		return	Router.parseURL(url).path;
 	};
@@ -693,13 +728,12 @@
 	/**
 	 * @class	Pilot.Route
 	 */
-	var Route = EventEmitter.extend({
+	var Route = Emitter.extend({
 		data: {},
 		boundAll: [],
 
-
 		__lego: function (options){
-			EventEmitter.fn.__lego.call(this);
+			Emitter.fn.__lego.call(this);
 
 			_extend(this, options);
 
@@ -714,9 +748,9 @@
 			}
 		},
 
-
 		__init: function (){
 			this.inited = true;
+			this.emit('beforeInit');
 			this.init();
 			this.emit('init');
 		},
@@ -942,7 +976,7 @@
 
 		for( ; i < n; i++ ){
 			src = args[i];
-			if( src && typeof src == 'object' ){
+			if( src && /object|function/.test(typeof src) ){
 				for( key in src ){
 					if( src.hasOwnProperty(key) ){
 						dst[key] = src[key];
@@ -956,6 +990,42 @@
 
 
 
+	function _parseQueryString(str){
+		var query = {};
+
+		if( typeof str == 'string' ){
+			var vars = str.split('&'), i = 0, n = vars.length, pair, name, val;
+			for( ; i < n; i++ ){
+				pair	= vars[i].split('=');
+				name	= pair[0];
+				val		= pair[1] === void 0 ? '' : pair[1];
+
+				try {
+					val	= decodeURIComponent(val);
+				}
+				catch( _ ){
+					val	= unescape(val);
+				}
+
+				if( name.length > 0 ){
+					if( query[name] === void 0 ){
+						query[name]	= val;
+					}
+					else if( query[name] instanceof Array ){
+						query[name].push(val);
+					}
+					else {
+						query[name] = [query[name], val];
+					}
+				}
+			}
+		}
+
+		return	query;
+	}
+
+
+
 
 	/**
 	 * Normalize the given path string,
@@ -964,7 +1034,7 @@
 	 */
 	function _pathRegexp(path, keys, sensitive, strict){
 		if( path instanceof RegExp ){ return path; }
-		if( $.isArray(path) ){ path = '('+ path.join('|') +')'; }
+		if( _isArray(path) ){ path = '('+ path.join('|') +')'; }
 
 		path = path
 			.concat(strict ? '' : '/?')
@@ -1020,12 +1090,24 @@
 	}
 
 
+	Router.utils = {
+		  each: _each
+		, extend: _extend
+		, qs: {
+			  parse: _parseQueryString
+			, stringify: $.param // @todo: no use jQuery
+		}
+	};
+
 	Router.Route	= Route;
 	Router.View		= View;
+	Router.Class	= klass;
+	Router.Emitter	= Emitter;
+	Router.Request	= Request;
 
 
 	// @export
-	Router.version	= '1.1.0';
+	Router.version	= '1.2.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){

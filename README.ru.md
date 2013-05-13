@@ -256,9 +256,9 @@ Ivan.nav('/base/123/'); // "base: 123"
 
 ```js
 new Pilot
-	.on('beforeroute', function (evt/**$.Event*/, req/**Object*/){ })
-	.on('route', function (evt/**$.Event*/, req/**Object*/){ })
-	.on('404', function (evt/**$.Event*/, req/**Object*/){ })
+	.on('beforeroute', function (evt/**$.Event*/, req/**Pilot.Request*/){ })
+	.on('route', function (evt/**$.Event*/, req/**Pilot.Request*/){ })
+	.on('404', function (evt/**$.Event*/, req/**Pilot.Request*/){ })
 	.on('error', function (evt/**$.Event*/, err/**Error*/){ })
 ;
 ```
@@ -275,7 +275,7 @@ new Pilot
 ```js
 new Pilot
 	// Подписываемся
-	.on('route.one', function (evt/**$.Event*/, req/**Object*/){
+	.on('route.one', function (evt/**$.Event*/, req/**Pilot.Request*/){
 		// Отписываемся используя namespace
 		this.off('.one');
 	})
@@ -360,12 +360,12 @@ console.log(Ace.history);
 ```js
 var airbase = Pilot.Route.extend({
 	init: function (){
-		this.on('routestart routeend', function (evt/**$.Event*/, req/**Object*/){
+		this.on('routestart routeend', function (evt/**$.Event*/, req/**Pilot.Request*/){
 			// ...
 		});
 	},
 
-	onRoute: function (evt/**$.Event*/, req/**Object*/){
+	onRoute: function (evt/**$.Event*/, req/**Pilot.Request*/){
 		// Также можно определить метод с названием события
 	}
 });
@@ -460,7 +460,7 @@ var airport = Pilot.Route.extend({
 ---
 
 <a name="Pilot.Route.loadData"><a/>
-### loadData(req`:Object`)`:jQuery.Deffered|Null`
+### loadData(req`:Pilot.Request`)`:jQuery.Deffered|Null`
 Метод будет вызван перед событием `routestart`, `routechange`. Если вренуть $.Deffered,
 то роутер дождётся окончания сбора данных контроллера и только потом осуществит навигацию.
 
@@ -721,10 +721,34 @@ var city = Pilot.View.extend({
 
 ---
 
-<a name="Request.object"></a>
-## Request object
+<a name="Pilot.Request"></a>
+## Pilot.Request
 route: `/gallery/:tag/:perPage?(/page/:page)?`<br/>
 request: `/gallery/cubism/20/page/123?search=text`
+
+<a name="Pilot.Request.@extend"></a>
+### @extend
+Расширение объекта собственными методами.
+
+```js
+Pilot.Request.fn.getPage = function (){
+	return	parseInt(this.params.page || this.query.page, 10) || 1;
+};
+
+(new Pilot)
+	.route('/news/page/:page', function (evt, req/**Pilot.Request*/){
+		var page = req.getPage();
+		console.log('news.page:', page);
+	})
+	.route('/search/', function (evt, req/**Pilot.Request*/){
+		var page = req.getPage();
+		console.log('search.page:', page);
+	})
+	.nav('/news/page/') // news.page: 1
+	.nav('/news/page/2/') // news.page: 2
+	.nav('/search/?page=123') // search.page: 123
+;
+```
 
 ### url`:String`
 Абсолютный url: `http://domain.com/gallery/cubism/20/page/3?search=text`
@@ -766,7 +790,7 @@ Pilot.pushState = true;
 
 
 <a name="Pilot.setLocation"></a>
-### Pilot.setLocation(req`:Object`)`:void`
+### Pilot.setLocation(req`:Pilot.Request`)`:void`
 Установить новое положение.
 
 * req — объект запроса

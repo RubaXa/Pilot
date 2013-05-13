@@ -253,9 +253,9 @@ Add a handler for one or more events. Pilot has four events: `beforeroute`, `rou
 
 ```js
 new Pilot
-	.on('beforeroute', function (evt/**$.Event*/, req/**Object*/){ })
-	.on('route', function (evt/**$.Event*/, req/**Object*/){ })
-	.on('404', function (evt/**$.Event*/, req/**Object*/){ })
+	.on('beforeroute', function (evt/**$.Event*/, req/**Pilot.Request*/){ })
+	.on('route', function (evt/**$.Event*/, req/**Pilot.Request*/){ })
+	.on('404', function (evt/**$.Event*/, req/**Pilot.Request*/){ })
 	.on('error', function (evt/**$.Event*/, err/**Error*/){ })
 ;
 ```
@@ -272,7 +272,7 @@ Switch off event handler.
 ```js
 new Pilot
 	// Subscribe
-	.on('route.one', function (evt/**$.Event*/, req/**Object*/){
+	.on('route.one', function (evt/**$.Event*/, req/**Pilot.Request*/){
 		// Unsubscribe using namespace
 		this.off('.one');
 	})
@@ -357,12 +357,12 @@ There is also `route` event, which is similar to `routestart` and `routechange`.
 ```js
 var airbase = Pilot.Route.extend({
 	init: function (){
-		this.on('routestart routeend', function (evt/**$.Event*/, req/**Object*/){
+		this.on('routestart routeend', function (evt/**$.Event*/, req/**Pilot.Request*/){
 			// ...
 		});
 	},
 
-	onRoute: function (evt/**$.Event*/, req/**Object*/){
+	onRoute: function (evt/**$.Event*/, req/**Pilot.Request*/){
 		// You can also define a method with the name of the event
 	}
 });
@@ -457,7 +457,7 @@ var airport = Pilot.Route.extend({
 ---
 
 <a name="Pilot.Route.loadData"><a/>
-### loadData(req`:Object`)`:jQuery.Deffered|Null`
+### loadData(req`:Pilot.Request`)`:jQuery.Deffered|Null`
 This method should be called before `routestart`, `routechange`.
 If `$.Deffered` returns, router will wait for the end of the controller data collection
 and then execute the navigation.
@@ -718,10 +718,35 @@ var city = Pilot.View.extend({
 
 ---
 
-<a name="Request.object"></a>
-## Request object
+<a name="Pilot.Request"></a>
+## Pilot.Request
 route: `/gallery/:tag/:perPage?(/page/:page)?`<br/>
 request: `/gallery/cubism/20/page/123?search=text`
+
+<a name="Pilot.Request.@extend"></a>
+### @extend
+Add and use its methods, eg:
+
+```js
+Pilot.Request.fn.getPage = function (){
+	return	parseInt(this.params.page || this.query.page, 10) || 1;
+};
+
+(new Pilot)
+	.route('/news/page/:page', function (evt, req/**Pilot.Request*/){
+		var page = req.getPage();
+		console.log('news.page:', page);
+	})
+	.route('/search/', function (evt, req/**Pilot.Request*/){
+		var page = req.getPage();
+		console.log('search.page:', page);
+	})
+	.nav('/news/page/') // news.page: 1
+	.nav('/news/page/2/') // news.page: 2
+	.nav('/search/?page=123') // search.page: 123
+;
+```
+
 
 ### url`:String`
 Absolute url: `http://domain.com/gallery/cubism/20/page/3?search=text`
@@ -740,6 +765,10 @@ Route parameters: `{ tag: "cubism", perPage: 20, page: 123 }`
 
 ### referrer`:String`
 Contains url of previous request: `http://domain.com/gallery/cubism/20/page/12`
+
+### clone()`:Pilot.Request`
+Clone method.
+
 
 ---
 
@@ -773,6 +802,15 @@ Set a new location.
 <a name="changelog"></a>
 ## Changelog
 
+
+### 1.2.0
+<ul>
+	<li>[#4](https://github.com/RubaXa/Pilot/pull/4): Added Pilot.Request.</li>
+	<li>+ Pilot.utils.each</li>
+	<li>+ Pilot.utils.extend</li>
+	<li>+ Pilot.utils.qs.parse(queryString)/**Object*/<li>
+	<li>+ Pilot.utils.qs.stringify(queryObject)/**String*/<li>
+</ul>
 
 ### 1.1.0
 <ul>
