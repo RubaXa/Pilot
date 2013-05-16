@@ -140,10 +140,10 @@
 			// call the parent method
 			Emitter.fn.__lego.call(this);
 
-			_extend(this, {
+			this.options = options = _extend({
 				  el: null
 				, selector: 'a[href],[data-nav]'
-				, path: '/'
+				, basePath: '/'
 				, production: window.Pilot && window.Pilot.production
 				, useHistory: false
 			}, options);
@@ -158,19 +158,20 @@
 			this.history	= [];
 			this.historyIdx	= 0;
 
-			if( options ){
-				if( options.useHistory ){
-					$(window).bind('popstate hashchange', _bind(this, function (){
-						this.nav( Router.getLocation() );
-					}));
-				}
-
-				// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
-				options.el && $(options.el).delegate(options.selector, 'click', _bind(this, function (evt){
-					this.nav(evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href'));
-					evt.preventDefault();
+			if( options.useHistory ){
+				$(window).bind('popstate hashchange', _bind(this, function (){
+					this.nav( Router.getLocation() );
 				}));
 			}
+
+
+			// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
+			options.el && $(options.el).delegate(options.selector, 'click', _bind(this, function (evt){
+
+				this.nav(evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href'));
+				evt.preventDefault();
+			}));
+
 
 			this.on('error', _bind(this, function (evt, err){
 				this.error(err.message +' at '+ err.line +'line in '+ (err.file || ''));
@@ -224,14 +225,14 @@
 
 			// build path
 			if( $.type(path) !== 'regexp' ){
-				path = (this.path + (path == '.' ? '' : path)).replace(/\/\//, '/');
+				path = (this.options.basePath + (path == '.' ? '' : path)).replace(/\/\//, '/');
 			}
 
 			// path keys
 			var keys = [], router = this, idx;
 
 			if( isGroup ){
-				router	= new Router({ path: path });
+				router	= new Router({ basePath: path });
 				router.items = this.items;
 				router.itemsIdx = this.itemsIdx;
 				router.parentRouter = this;
@@ -454,14 +455,14 @@
 
 
 		log: function (str){
-			if( !this.production && window.console ){
+			if( !this.options.production && window.console ){
 				console.log(str);
 			}
 		},
 
 
 		error: function (str){
-			if( !this.production ){
+			if( !this.options.production ){
 				if( window.console && console.error ){
 					console.error(str);
 				} else {
@@ -1107,7 +1108,7 @@
 
 
 	// @export
-	Router.version	= '1.2.0';
+	Router.version	= '1.2.1';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){

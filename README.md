@@ -803,6 +803,11 @@ Set a new location.
 ## Changelog
 
 
+### 1.2.1
+<ul>
+	<li>Fixed Pilot options</li>
+</ul>
+
 ### 1.2.0
 <ul>
 	<li>[#4](https://github.com/RubaXa/Pilot/pull/4): Added Pilot.Request.</li>
