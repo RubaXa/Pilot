@@ -20,8 +20,8 @@
  *	Moses.go('blog-post', { id: 2 });
  */
 
-/*global window, jQuery, define, unescape*/
-(function (window, $){
+/*global window, define, unescape*/
+(function (window){
 	"use strict";
 
 	var
@@ -29,6 +29,7 @@
 		, noop		= function (){}
 		, undef		= void 0
 
+		, $			= window.jQuery || window.Zepto || window.ender || noop
 		, history	= window.history
 		, document	= window.document
 		, location	= window.location
@@ -39,11 +40,16 @@
 		, _bind		= function (ctx, fn){
 			var args = _slice.call(arguments, 2);
 			return	fn.bind ? fn.bind.apply(fn, [ctx].concat(args)) : function (){
-				return fn.apply(ctx, args.concat(_slice(arguments)));
+				return fn.apply(ctx, args.concat(_slice.call(arguments)));
 			};
 		}
 
-		, _isArray	= $.isArray
+		, _isArray	= Array.isArray || $.isArray
+
+		, _checkAccess = function (route, req){
+			var permission = route.accessPermission, access = Router.access[permission];
+			return	permission === void 0 || (access ? access(req) : false);
+		}
 	;
 
 
@@ -167,8 +173,7 @@
 
 			// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
 			options.el && $(options.el).delegate(options.selector, 'click', _bind(this, function (evt){
-
-				this.nav(evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href'));
+				this.nav( Router.getLocation( evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href') ) );
 				evt.preventDefault();
 			}));
 
@@ -319,9 +324,17 @@
 
 			while( task = units.shift() ){
 				if( task && task.isActive(originUnits) ){
-					_each(task.units, addTask);
-
 					req.params = task.requestParams;
+
+					if( !_checkAccess(task, req) ){
+						task.emit('access-denied', req);
+						return $.Deferred().reject(task.accessDeniedRedirectTo && {
+							  redirectTo: task.accessDeniedRedirectTo
+							, redirectParams: task.requestParams
+						});
+					}
+
+					_each(task.units, addTask);
 
 					if( task.loadData ){
 						try {
@@ -360,9 +373,10 @@
 				;
 
 				req.params = params;
-				unit.request = req;
 
 				if( _matchRoute(req.path, item.regexp, item.keys, params) && unit.isActive(this.activeUnits) ){
+					unit.request = req;
+
 					if( unit.inited !== true ){
 						unit.__init();
 					}
@@ -401,6 +415,8 @@
 				}
 				else if( (unit.active === true) && !~$.inArray(unit, this.activeUnits) ){
 					unit.active = false;
+					unit.request = req;
+
 					try {
 						unit.emit('route-end', req);
 					} catch( err ){
@@ -417,7 +433,7 @@
 				if( this.request.url != req.url ){
 					this.referrer = this.request;
 
-					if( this.useHistory  ){
+					if( this.options.useHistory  ){
 						Router.setLocation(req);
 					}
 				}
@@ -446,10 +462,35 @@
 		},
 
 
-		_doRouteFail: function (req/**Pilot.Request*/){
+		_doRouteFail: function (req/**Pilot.Request*/, opts/**Object*/){
+			opts = opts || {};
+
 			if( this.activeRequest === req ){
+				var redirectTo = opts.redirectTo;
+
 				this.activeRequest = null;
-				this.emit('route-fail', req);
+				this.emit('route-fail', req, opts);
+
+				if( redirectTo ){
+					if( redirectTo === '..' ){
+						redirectTo = req.path.split('/');
+
+						if( redirectTo.pop() === "" ){
+							redirectTo.pop();
+							redirectTo.push("");
+						}
+
+						redirectTo = redirectTo.join('/');
+					}
+					else if( typeof redirectTo === 'function' ){
+						redirectTo = redirectTo.call(this, req);
+					}
+					else if( this.get(redirectTo) ){
+						redirectTo = this.getUrl(redirectTo, opts.redirectParams);
+					}
+
+					this.nav(redirectTo);
+				}
 			}
 		},
 
@@ -666,6 +707,7 @@
 			}
 		}
 
+		url = url.substr(0, 7) + url.substr(7).replace(/\/+/g, '/');
 
 		var
 			  search	= (url.split('?')[1]||'').replace(/#.*/, '')
@@ -715,8 +757,8 @@
 	 * Get location
 	 * @return	{String}
 	 */
-	Router.getLocation = function (){
-		var url = location.toString();
+	Router.getLocation = function (url){
+		url = url || location.toString();
 		if( !Router.pushState ){
 			url = url.split(/#!?/).pop();
 		}
@@ -1100,6 +1142,8 @@
 		}
 	};
 
+
+	Router.access	= {};
 	Router.Route	= Route;
 	Router.View		= View;
 	Router.Class	= klass;
@@ -1114,4 +1158,4 @@
 	if( typeof define === "function" && define.amd ){
 		define("Pilot", [], function (){ return Router; });
 	}
-})(window, jQuery);
+})(typeof module !== 'undefined' && module.exports || window);

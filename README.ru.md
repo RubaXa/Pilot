@@ -373,6 +373,52 @@ var airbase = Pilot.Route.extend({
 
 ---
 
+<a name="Pilot.Route.accessPermission"></a>
+### accessPermission`:String`
+Установить доступ к маршруту.
+
+```js
+Pilot.access['denied'] = function (req/**Pilot.Request*/){
+	return	false;
+};
+
+var Spy = new Pilot;
+
+Spy.route('/public/', function (){ console.log("Public!"); })
+
+Spy.route('/private/', {
+	accessPermission: 'denied', // permission
+	accessDeniedRedirectTo: '/public/'
+});
+
+Spy.route('/public/closed/', {
+	accessPermission: 'denied', // permission
+	accessDeniedRedirectTo: '..'
+});
+
+
+Spy.nav('/private/'); // "Public!"
+Spy.nav('/public/closed/'); // "Public!"
+```
+
+---
+
+<a name="Pilot.Route.accessDeniedRedirectTo"></a>
+### accessDeniedRedirectTo`:String`
+Редирект, в случае отказа в доступе.
+Принимает такие значения как: `url`, `route id`, `function` или `..` чтобы подняться на уровень вверх.
+
+```js
+var ClosedBase = Pilot.Route.extend({
+	accessPermission: false,
+	accessDeniedRedirectTo: function (req/**Pilot.Request*/){
+		return	this.router.getUrl('home');
+	}
+});
+```
+
+---
+
 <a name="Pilot.Route.inited"><a/>
 ### inited`:Boolean`
 Флаг инициализации маршрута.

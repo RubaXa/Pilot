@@ -370,6 +370,52 @@ var airbase = Pilot.Route.extend({
 
 ---
 
+<a name="Pilot.Route.accessPermission"></a>
+### accessPermission`:String`
+
+```js
+Pilot.access['denied'] = function (req/**Pilot.Request*/){
+	return	false;
+};
+
+var Spy = new Pilot;
+
+Spy.route('/public/', function (){ console.log("Public!"); })
+
+Spy.route('/private/', {
+	accessPermission: 'denied', // permission
+	accessDeniedRedirectTo: '/public/'
+});
+
+Spy.route('/public/closed/', {
+	accessPermission: 'denied', // permission
+	accessDeniedRedirectTo: '..'
+});
+
+
+Spy.nav('/private/'); // "Public!"
+Spy.nav('/public/closed/'); // "Public!"
+```
+
+---
+
+<a name="Pilot.Route.accessDeniedRedirectTo"></a>
+### accessDeniedRedirectTo`:String`
+Adopt such values ​​as: `url`, `route id`, `function` or `..` to rise to a up level.
+
+```js
+var ClosedBase = Pilot.Route.extend({
+	accessPermission: false,
+	accessDeniedRedirectTo: function (req/**Pilot.Request*/){
+		return	this.router.getUrl('home');
+	}
+});
+```
+
+
+---
+
+
 <a name="Pilot.Route.inited"><a/>
 ### inited`:Boolean`
 Route initialization flag.
@@ -465,7 +511,7 @@ and then execute the navigation.
 * req — request object
 
 ```js
-var airport = Pilot.Route.View.extend({
+var airport = Pilot.Route.extend({
     loadData: function (req){
         return $.ajax('/load/data/', req.query, this.bound(function (data){
             this.setData( data );
@@ -797,14 +843,24 @@ Set a new location.
 
 * req — request object
 
+
 ---
+
+
 
 <a name="changelog"></a>
 ## Changelog
 
+### 1.3
+<ul>
+	<li>+ `accessPermission` route option</li>
+	<li>+ `accessDeniedRedirectTo` route option</li>
+</ul>
 
 ### 1.2.1
 <ul>
+	<li>+ Support Zepto, Ender or $</li>
+	<li>Fixed set request params</li>
 	<li>Fixed Pilot options</li>
 </ul>
 

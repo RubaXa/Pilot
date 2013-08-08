@@ -17,11 +17,11 @@
 	<script src="//code.jquery.com/jquery-1.8.2.min.js"></script>
 	<script>!window.jQuery && document.write('<script src="/js/jquery.dev.js"><'+'/script>');</script>
 
-	<script src="http://xtpl.ru/js/xtpl.min.js"></script>
+	<script src="/js/xtpl.min.js"></script>
 </head>
 <body class="body">
 
-	<x:tpl ctrl="main">
+	<script x:ctrl="main" type="text/xhtml">
 		<div id="sidebar" class="sidebar">
 			<div>
 				<div class="menu">
@@ -80,7 +80,7 @@
 
 					<div style="margin-bottom: 30px;">
 						<div>
-							<x:v mod="txt.hl" output="text" bind="true">item.descr[ctx.lang]</x:v>
+							{*item.descr[ctx.lang] | markdown*}
 						</div>
 						<br/>
 
@@ -88,22 +88,19 @@
 							<div x:repeat="prop in item.props">
 								<a name="{{ctx.lang}}/{{prop.label}}"></a>
 								<h4 class="fn" data-anchor="prop">
-									<x:switch select="prop.type">
-										<x:case test="-1">
-											{{prop.name}}
-										</x:case>
-
-										<x:default>
-											{{prop.name}}:
-											<span class="type">{{prop.type}}</span>
-										</x:default>
-									</x:switch>
+									<x:value>prop.name</x:value>
+									<x:if test="prop.type != -1">
+										<x:text value=": "/>
+										<span class="type">{{prop.type}}</span>
+									</x:if>
 								</h4>
+
 								<div class="descr">
-									<x:v mod="txt.hl" output="text" bind="true">prop.descr[ctx.lang]</x:v>
+									{*prop.descr[ctx.lang] | markdown*}
 								</div>
 
 								<div x:if="prop.code" x:highlight="prop.code.type">
+									<highlight></highlight>
 									<pre>
 										<code>
 											{{prop.code.source[ctx.lang]}}
@@ -131,6 +128,7 @@
 														<span>]</span>
 													</span>
 												</x:if>
+
 												<x:if test="!arg.optional">
 													<span x:if="idx">, </span>
 													<span>{{arg.name}}:</span>
@@ -143,7 +141,7 @@
 									</h4>
 
 									<div class="descr">
-										<x:v mod="txt.hl" output="text" bind="true">variant.descr[ctx.lang]</x:v>
+										{*variant.descr[ctx.lang] | markdown*}
 									</div>
 
 									<ul>
@@ -154,7 +152,7 @@
 										</li>
 									</ul>
 
-									<div x:highlight="fn.code.type" x:if="fn.code">
+									<div x:if="fn.code" x:highlight="fn.code.type">
 										<pre>
 											<code>{{fn.code.source[ctx.lang]}}</code>
 										</pre>
@@ -168,7 +166,8 @@
 				</div>
 			</div>
 		</div>
-	</x:tpl>
+	</script>
+
 
 	<div style="height: 750px; margin-left: 280px; position: relative;">
 		<a name="app"></a>
@@ -195,12 +194,14 @@
 	<script src="./example/app.js"></script>
 
 	<script>
+		xtpl.xml = true;
+
 		/** @namespace hljs -- highlight.js */
 		if( window.hljs ){
-			xtpl.decl('highlight', {
+			xtpl.decl('x:highlight', {
 				init: function (el, type){
 					if( el ){
-						el.className += ' language-' + (type == 'js' ? 'javascript' : type);
+						el.className = 'language-' + (type == 'js' ? 'javascript' : type);
 						hljs.highlightBlock(el);
 					}
 				}
@@ -208,8 +209,8 @@
 		}
 
 
-		xtpl.mod('txt.hl', function (text){
-			return	text.replace(/`([^`]+)`/g, '<span class="code">$1</span>');
+		xtpl.mod('markdown', function (text){
+			return	text ? text.replace(/`([^`]+)`/g, '<span class="code">$1</span>') : text;
 		});
 
 
@@ -218,7 +219,8 @@
 		});
 
 
-		var __ts = new Date;
+		console && console.time && console.time('main');
+
 		xtpl.ctrl('main', function (ctx){
 			var lang = (window.navigator.userLanguage || window.navigator.language).split('-')[0];
 			var _rlang = /(?:\/|^)(en|ru)\//;
@@ -231,15 +233,9 @@
 				$(window).trigger('resize');
 			};
 
+
 			ctx.api = {};
 			ctx.lang = /(en|ru)/.test(lang) ? lang : 'en';
-
-
-			ctx.getArgs = function (args){
-				return	xtpl.utils.map(args, function (arg){
-					return	arg.name;
-				}).join(', ');
-			};
 
 
 			$(window).bind('hashchange', function (){
@@ -249,13 +245,15 @@
 				ctx.lang = lang;
 				ctx.relpath = href.replace(/^.+\//, '');
 
-				ctx.$apply && ctx.$apply(_updScroll);
+				ctx.$apply(_updScroll);
 			}).trigger('hashchange');
 
 
 			$.getJSON('./statics/docs.json?ver='+Pilot.version, function (json){
 				ctx.api = json;
 				ctx.$apply(_updScroll);
+
+				console && console.time && console.timeEnd('main');
 			});
 		});
 	</script>
