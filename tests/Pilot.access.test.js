@@ -1,5 +1,5 @@
 /*jslint curly: false */
-/*global Pilot, module, test, equal*/
+/*global jQuery, Pilot, module, test, equal*/
 
 /**
  *       ~~~ TESTS ~~~
@@ -113,4 +113,38 @@ test('redirectToFn', function (){
 	router.nav('/done/3/');
 
 	equal(log.join(' -> '), '/done/1/ -> /done/2/ -> /done/3/');
+});
+
+
+
+test('deferrer', function (){
+	var log = [];
+	var router = new Pilot;
+
+	Pilot.access['promise'] = function (req){
+		return	jQuery.Deferred()[/public/.test(req.path) ? 'resolve' : 'reject']();
+	};
+
+	router
+		.on('route', function (evt, req){ return log.push(req.path); })
+		.route('/public/', {
+			accessPermission: 'promise',
+			accessDeniedRedirectTo: '/'
+		})
+		.route('/private/', {
+			accessPermission: 'promise',
+			accessDeniedRedirectTo: '/'
+		})
+		.route('/public/closed/', {
+			loadData: function (){
+				return	jQuery.Deferred().reject({ redirectTo: '/public/' });
+			}
+		})
+	;
+
+	router.nav('/public/');
+	router.nav('/private/');
+	router.nav('/public/closed/');
+
+	equal(log.join(' -> '), '/public/ -> / -> /public/');
 });

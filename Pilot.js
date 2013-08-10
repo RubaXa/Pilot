@@ -45,8 +45,11 @@
 		}
 
 		, _isArray	= Array.isArray || $.isArray
+		, _when = function (args){
+			return	$.when.apply($, args);
+		}
 
-		, _checkAccess = function (route, req){
+		, _getRouteAccess = function (route, req){
 			var permission = route.accessPermission, access = Router.access[permission];
 			return	permission === void 0 || (access ? access(req) : false);
 		}
@@ -312,8 +315,12 @@
 		_loadUnits: function (req/**Pilot.Request*/, originUnits){
 			var
 				  queue = []
+				, accessQueue = []
 				, task
+				, access
+				, accessDenied
 				, units
+				, promise
 				, addTask = function (unit){
 					units.push(unit);
 				}
@@ -326,25 +333,29 @@
 				if( task && task.isActive(originUnits) ){
 					req.params = task.requestParams;
 
-					if( !_checkAccess(task, req) ){
+					access = _getRouteAccess(task, req);
+					accessDenied = task.accessDeniedRedirectTo && {
+						  redirectTo: task.accessDeniedRedirectTo
+						, redirectParams: task.requestParams
+					};
+
+					if( !access ){
 						task.emit('access-denied', req);
-						return $.Deferred().reject(task.accessDeniedRedirectTo && {
-							  redirectTo: task.accessDeniedRedirectTo
-							, redirectParams: task.requestParams
-						});
+						return $.Deferred().reject(accessDenied);
+					}
+					else if( access.then ){
+						access.denied = accessDenied;
+						accessQueue.push(access);
 					}
 
 					_each(task.units, addTask);
 
 					if( task.loadData ){
-						try {
+						if( !access || !access.then ){
 							task = task.loadData(req, this._navByHistory);
-						} catch( err ){
-							err.name = 'loadData';
-							this.emit('error', err);
-
-							// exit
-							return	$.Deferred().reject();
+						}
+						else {
+							task = _bind(task, 'loadData', req, this._navByHistory);
 						}
 					}
 
@@ -359,7 +370,21 @@
 				}
 			}
 
-			return	$.when.apply($, queue);
+			if( accessQueue.length ){
+				promise = $.Deferred();
+				_when(accessQueue)
+					.then(function (){
+						_when(queue).then(promise.resolve, promise.reject);
+					}, function (){
+						promise.reject(access.denied);
+					})
+				;
+			}
+			else {
+				promise	= _when(queue);
+			}
+
+			return	promise.promise();
 		},
 
 
