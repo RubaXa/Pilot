@@ -1168,7 +1168,7 @@
 	};
 
 
-	Router.access	= {};
+	Router.access	= { extend: function (access){ _extend(this, access); } };
 	Router.Route	= Route;
 	Router.View		= View;
 	Router.Class	= klass;
@@ -1177,7 +1177,7 @@
 
 
 	// @export
-	Router.version	= '1.2.1';
+	Router.version	= '1.3.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){
