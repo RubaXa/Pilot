@@ -373,6 +373,22 @@ var airbase = Pilot.Route.extend({
 
 ---
 
+<a name="Pilot.Route.paramsRules"></a>
+### paramsRules`:Object`
+Дополнительные правила проверки для параметров.
+
+```js
+Ivan.route("/just/:name/", {
+	paramsRules: {
+		name: function (value/**String*/, req/**Pilot.Request*/){
+			return value == "moscow" || value == "kiev";
+		}
+	}
+});
+```
+
+---
+
 <a name="Pilot.Route.accessPermission"></a>
 ### accessPermission`:String`
 Установить доступ к маршруту.

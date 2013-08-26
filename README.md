@@ -370,6 +370,23 @@ var airbase = Pilot.Route.extend({
 
 ---
 
+<a name="Pilot.Route.paramsRules"></a>
+### paramsRules`:Object`
+Additional rules test parameters
+
+```js
+Ivan.route("/just/:name/", {
+	paramsRules: {
+		name: function (value/**String*/, req/**Pilot.Request*/){
+			return value == "moscow" || value == "kiev";
+		}
+	}
+});
+```
+
+
+---
+
 <a name="Pilot.Route.accessPermission"></a>
 ### accessPermission`:String`
 
@@ -853,6 +870,7 @@ Set a new location.
 
 ### 1.3
 <ul>
+	<li>+ `paramsRules` route option</li>
 	<li>+ `accessPermission` route option</li>
 	<li>+ `accessDeniedRedirectTo` route option</li>
 </ul>

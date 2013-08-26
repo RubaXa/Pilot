@@ -15,6 +15,10 @@
 		};
 		// /((show|link)/)?(home|links|shared|history|attaches|files)(/.*)
 
+		Router.route('/foo', function (evt, req){
+			log('foo', req.path);
+		});
+
 		Router.route('/:mode(show|link)', function (evt, req){
 			log('mode', req.params.mode);
 		});
@@ -27,9 +31,10 @@
 			log('mode?+storage+id?', (req.params.mode || '')+':'+req.params.storage+':'+(req.params.id || ''));
 		});
 
+		Router.nav('/foo');
 
 		// mode
-		Router.nav('/foo');
+		Router.nav('/bar');
 		Router.nav('/show/');
 		Router.nav('/bar/');
 		Router.nav('/link');
@@ -46,6 +51,7 @@
 		Router.nav('/links/my/id');
 		Router.nav('/link/links/my/id');
 
+		equal(_log['foo'].join('->'), '/foo');
 		equal(_log['mode'].join('->'), 'show->link->show');
 		equal(_log['mode?+storage'].join('->'), ':home->show:home->:shared');
 		equal(_log['mode?+storage+id?'].join('->'), ':home:->show:home:->:shared:->:shared:myid->:links:my/id->link:links:my/id');
@@ -132,6 +138,29 @@
 		Router.nav('/post/abc');
 	});
 
+
+	test('Route.paramsRule', function (){
+		var Router = new Pilot, log = [];
+
+		Router.route('/:userId?', {
+			paramsRules: {
+				userId: function (id){
+					return id != 'auth';
+				}
+			},
+			onRoute: function (evt, req){
+				log.push(req.path);
+			}
+		});
+
+		Router.route('/auth/', function (evt, req){ log.push('['+req.path+']'); });
+
+		Router.nav('/123/');
+		Router.nav('/auth/');
+		Router.nav('/456/');
+
+		equal(log.join(' -> '), '/123/ -> [/auth/] -> /456/');
+	});
 
 
 	/**

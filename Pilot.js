@@ -248,12 +248,14 @@
 			}
 
 			if( unit ){
+				unit = unit || Router.View;
+
 				idx = this.items.push({
 					  id:		id
 					, path:		path
 					, keys:		keys
-					, regexp:	_pathRegexp(path, keys)
-					, unit:		unit || Router.View
+					, regexp:	_pathRegexp(path, keys, unit.fn.paramsRules || {})
+					, unit:		unit
 					, options:	options
 				});
 
@@ -294,7 +296,7 @@
 			_each(items, function (item){
 				var unit = item.unit, params = [];
 
-				if( _matchRoute(req.path, item.regexp, item.keys, params) ){
+				if( _matchRoute(req, item.regexp, item.keys, params) ){
 					if( unit.__self === undef ){
 						item.unit = unit = new unit(_extend({
 							  id:		item.id
@@ -399,7 +401,7 @@
 
 				req.params = params;
 
-				if( _matchRoute(req.path, item.regexp, item.keys, params) && unit.isActive(this.activeUnits) ){
+				if( _matchRoute(req, item.regexp, item.keys, params) && unit.isActive(this.activeUnits) ){
 					unit.request = req;
 
 					if( unit.inited !== true ){
@@ -799,6 +801,7 @@
 	var Route = Emitter.extend({
 		data: {},
 		boundAll: [],
+		paramsRules: {},
 
 		__lego: function (options){
 			Emitter.fn.__lego.call(this);
@@ -1100,15 +1103,20 @@
 	 * returning a regular expression.
 	 * https://github.com/visionmedia/express/blob/master/lib/utils.js#L248
 	 */
-	function _pathRegexp(path, keys, sensitive, strict){
+	function _pathRegexp(path, keys, rules){
 		if( path instanceof RegExp ){ return path; }
 		if( _isArray(path) ){ path = '('+ path.join('|') +')'; }
 
 		path = path
-			.concat(strict ? '' : '/?')
+			.concat('/?')
 			.replace(/(\/\(|\(\/)/g, '(?:/')
 			.replace(/(\/)?(\.)?:(\w+)(?:(\([^?].*?\)))?(\?)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
-				keys.push({ name: key, optional: !! optional });
+				keys.push({
+					  name: key
+					, optional: !!optional
+					, rule: rules[key]
+				});
+
 				slash = slash || '';
 
 				return ''
@@ -1124,7 +1132,7 @@
 			.replace(/\*/g, '(.*)')
 		;
 
-		return new RegExp('^' + path + '$', sensitive ? '' : 'i');
+		return new RegExp('^' + path + '$', 'i');
 	}
 
 
@@ -1132,9 +1140,9 @@
 	 * Check if this route matches `path`.
 	 * https://github.com/visionmedia/express/blob/master/lib/router/route.js#L50
 	 */
-	function _matchRoute(path, regexp, keys, params){
+	function _matchRoute(req, regexp, keys, params){
 		if( keys ){
-			var i = 1, l, key, val, m = regexp.exec(path);
+			var i = 1, l, key, val, m = regexp.exec(req.path);
 
 			if( !m ){
 				return false;
@@ -1145,7 +1153,12 @@
 				val = 'string' == typeof m[i] ? decodeURIComponent(m[i]) : m[i];
 
 				if( key ){
-					params[key.name] = val;
+					if( !key.rule || key.rule(val, req) === true ){
+						params[key.name] = val;
+					}
+					else {
+						return	false;
+					}
 				} else {
 					params.push(val);
 				}
@@ -1154,7 +1167,7 @@
 			return	true;
 		}
 
-		return regexp.test(path);
+		return regexp.test(req.path);
 	}
 
 
