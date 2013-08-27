@@ -139,7 +139,7 @@
 	});
 
 
-	test('Route.paramsRule', function (){
+	test('Route.paramsRules', function (){
 		var Router = new Pilot, log = [];
 
 		Router.route('/:userId?', {
@@ -160,6 +160,50 @@
 		Router.nav('/456/');
 
 		equal(log.join(' -> '), '/123/ -> [/auth/] -> /456/');
+	});
+
+
+	test('Route.paramsRules + group', function (){
+		var Router = new Pilot, log = [];
+
+		Router
+			.createGroup('/:x', {
+				paramsRules: { x: function (v){ return v == 'x'; } },
+				onRouteStart: function (evt, req){ log.push('['+req.path+']'); }
+			})
+				.route('/:y', {
+					paramsRules: { y: function (v){ return v == 'y'; } },
+					onRouteStart: function (evt, req){ log.push(req.path); }
+				})
+				.createGroup('/:y', {
+					paramsRules: { y: function (v){ return v == 2; } },
+					onRouteStart: function (evt, req){ log.push('['+req.path+']'); }
+				})
+					.route('/:z', {
+						paramsRules: { z: function (v){ return v == 'z'; } },
+						onRouteStart: function (evt, req){ log.push(req.path); }
+					})
+					.closeGroup()
+				.route('/:y', {
+					paramsRules: { y: function (v){ return v == 9; } },
+					onRouteStart: function (evt, req){ log.push('!'+req.path+'!'); }
+				})
+		;
+
+		Router.nav('/x/');
+		Router.nav('/y/');
+
+		Router.nav('/x/x/');
+		Router.nav('/x/y/');
+
+		Router.nav('/x/2/');
+		Router.nav('/x/3/z/');
+		Router.nav('/x/2/z/');
+
+		Router.nav('/x/6/');
+		Router.nav('/x/9/');
+
+		equal(log.join(' -> '), '[/x/] -> [/x/x/] -> /x/y/ -> [/x/2/] -> [/x/2/z/] -> /x/2/z/ -> !/x/9/!');
 	});
 
 

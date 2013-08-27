@@ -236,11 +236,18 @@
 				path = (this.options.basePath + (path == '.' ? '' : path)).replace(/\/\//, '/');
 			}
 
-			// path keys
-			var keys = [], router = this, idx;
+			var
+				  keys = [] // path keys
+				, router = this
+				, paramsRules = options && options.paramsRules || unit && unit.fn.paramsRules || {}
+				, idx
+			;
 
 			if( isGroup ){
-				router	= new Router({ basePath: path });
+				router	= new Router({
+					basePath: path,
+					paramsRules: paramsRules
+				});
 				router.items = this.items;
 				router.itemsIdx = this.itemsIdx;
 				router.parentRouter = this;
@@ -248,14 +255,12 @@
 			}
 
 			if( unit ){
-				unit = unit || Router.View;
-
 				idx = this.items.push({
 					  id:		id
 					, path:		path
 					, keys:		keys
-					, regexp:	_pathRegexp(path, keys, unit.fn.paramsRules || {})
-					, unit:		unit
+					, regexp:	_pathRegexp(path, keys, _extend({}, router.options.paramsRules, paramsRules))
+					, unit:		unit || Router.View
 					, options:	options
 				});
 
