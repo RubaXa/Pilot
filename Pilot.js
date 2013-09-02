@@ -328,8 +328,16 @@
 				, accessDenied
 				, units
 				, promise
-				, addTask = function (unit){
-					units.push(unit);
+				, addSubview = function (view, name){
+					if( !view.__self ){
+						view = new view({ inited: false });
+						view.el = view.el || '[data-subview-id="'+name+'"]';
+						view.router = this.router;
+						view.parentView = this;
+						this.subviews[name] = view;
+					}
+					view.requestParams = this.requestParams;
+					units.push(view);
 				}
 			;
 
@@ -355,7 +363,7 @@
 						accessQueue.push(access);
 					}
 
-					_each(task.units, addTask);
+					_each(task.subviews, addSubview, task);
 
 					if( task.loadData ){
 						if( !access || !access.then ){
@@ -901,9 +909,11 @@
 		template: null,
 
 		events: {},
+		subviews: null,
 
 		__init: function (){
-			this.inited = true;
+			this.inited	= true;
+			this.__init	= noop;
 
 			if( this.el ){
 				this.setElement($(this.el, this.parentNode));
@@ -942,12 +952,28 @@
 				this.$el.length = 0;
 			}
 
-			this.on('routestart.view routeend.view', this.bound(function (evt){
-				this.toggleView(evt.type != 'routeend');
+
+			this.on('routestart.view routechange.view routeend.view', this.bound(function (evt, req){
+				var type = evt.type;
+
+				if( type !== 'routechange' ){
+					this.toggleView(type != 'routeend');
+				}
+
+				_each(this.subviews, function (view){
+					view.emit(type, req);
+				});
 			}));
+
 
 			// Call the parent method
 			Route.fn.__init.call(this);
+
+			// Init subviews
+			_each(this.subviews, function (view){
+				view.parentNode = this.el;
+				view.__init();
+			}, this);
 		},
 
 
