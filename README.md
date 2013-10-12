@@ -868,6 +868,11 @@ Set a new location.
 <a name="changelog"></a>
 ## Changelog
 
+<ul>
+	<li>* catch errors</li>
+	<li>+ grunt-version task</li>
+</ul>
+
 ### 1.3
 <ul>
 	<li>+ `paramsRules` route option</li>

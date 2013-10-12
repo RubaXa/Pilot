@@ -30,6 +30,7 @@
 		, undef		= void 0
 
 		, $			= window.jQuery || window.Zepto || window.ender || noop
+		, defer		= $.Deferred
 		, history	= window.history
 		, document	= window.document
 		, location	= window.location
@@ -181,11 +182,6 @@
 			}));
 
 
-			this.on('error', _bind(this, function (evt, err){
-				this.error(err.message +' at '+ err.line +'line in '+ (err.file || ''));
-				this.log(err.stack);
-			}));
-
 			this.init();
 		},
 
@@ -328,6 +324,7 @@
 				, accessDenied
 				, units
 				, promise
+				, production = this.options.production
 				, addSubview = function (view, name){
 					if( !view.__self ){
 						view = new view({ inited: false });
@@ -356,7 +353,7 @@
 
 					if( !access ){
 						task.emit('access-denied', req);
-						return $.Deferred().reject(accessDenied);
+						return defer().reject(accessDenied);
 					}
 					else if( access.then ){
 						access.denied = accessDenied;
@@ -367,7 +364,19 @@
 
 					if( task.loadData ){
 						if( !access || !access.then ){
-							task = task.loadData(req, this._navByHistory);
+							if( production ){
+								try {
+									task = task.loadData(req, this._navByHistory);
+								}
+								catch( err ){
+									task = defer().reject(err);
+									err.name = 'loadData';
+									this.emit('error', err, req);
+								}
+							}
+							else {
+								task = task.loadData(req, this._navByHistory);
+							}
 						}
 						else {
 							task = _bind(task, 'loadData', req, this._navByHistory);
@@ -386,7 +395,8 @@
 			}
 
 			if( accessQueue.length ){
-				promise = $.Deferred();
+				promise = defer();
+
 				_when(accessQueue)
 					.then(function (){
 						_when(queue).then(promise.resolve, promise.reject);
@@ -404,6 +414,23 @@
 
 
 		_doRouteUnits: function (request/**Pilot.Request*/, items){
+			var
+				production = this.options.production,
+				_tryEmit = _bind(this, function (unit, name, req){
+					if( production ){
+						try {
+							unit.emit(name, req);
+						} catch( err ){
+							err.name = name.replace('-', '');
+							this.emit('error', err, req);
+						}
+					}
+					else {
+						unit.emit(name, req);
+					}
+				})
+			;
+
 			_each(items, function (item){
 				var
 					  unit = item.unit
@@ -424,45 +451,22 @@
 					if( unit.active !== true ){
 						routeChange = false;
 						unit.active = true;
-
-						try {
-							unit.emit('route-start', req);
-						} catch( err ){
-							err.name = 'routestart';
-							this.emit('error', err, req);
-						}
+						_tryEmit(unit, 'route-start', req);
 					}
 					else if( true ){
 						// @todo: Проверить изменение параметров, если их нет, не вызывать событие
 					}
 
-					try {
-						unit.emit('route', req);
-					} catch( err ){
-						err.name = 'route';
-						this.emit('error', err, req);
-						this.emit('routeerror', err, req);
-					}
+					_tryEmit(unit, 'route', req);
 
 					if( routeChange ){
-						try {
-							unit.emit('route-change', req);
-						} catch( err ){
-							err.name = 'routechange';
-							this.emit('error', err, req);
-						}
+						_tryEmit(unit, 'route-change', req);
 					}
 				}
 				else if( (unit.active === true) && !~$.inArray(unit, this.activeUnits) ){
 					unit.active = false;
 					unit.request = req;
-
-					try {
-						unit.emit('route-end', req);
-					} catch( err ){
-						err.name = 'routeend';
-						this.emit('geterror', err, req);
-					}
+					_tryEmit(unit, 'route-end', req);
 				}
 			}, this);
 		},
@@ -487,12 +491,7 @@
 
 				// debatable, but there will be so.
 				if( this.items.length ){
-					try {
-						this._doRouteUnits(req, this.items);
-					} catch( err ){
-						err.name = 'route';
-						this.emit('error', err);
-					}
+					this._doRouteUnits(req, this.items);
 				}
 
 				var delta = new Date - this.__ts;
@@ -613,7 +612,7 @@
 
 		_nav: function (url, byHistory, force){
 			var
-				  df	= $.Deferred()
+				  df	= defer()
 				, req	= Router.parseURL(url.href || url.url || url)
 			;
 
@@ -680,7 +679,7 @@
 		 */
 		go: function (id, params){
 			var url = this.getUrl(id, params);
-			return	url ? this.nav(url) : $.Deferred().reject().promise();
+			return	url ? this.nav(url) : defer().reject().promise();
 		},
 
 
@@ -689,16 +688,16 @@
 		},
 
 
+		hasForward: function (){
+			return	!!this.history[this.historyIdx + 1];
+		},
+
+
 		back: function (){
 			if( this.hasBack() ){
 				return	this._nav(this.history[--this.historyIdx], true);
 			}
-			return	$.Deferred().resolve();
-		},
-
-
-		hasForward: function (){
-			return	!!this.history[this.historyIdx + 1];
+			return	defer().resolve();
 		},
 
 
@@ -706,7 +705,7 @@
 			if( this.hasForward() ){
 				return	this._nav(this.history[++this.historyIdx], true);
 			}
-			return	$.Deferred().resolve;
+			return	defer().resolve();
 		}
 	});
 
@@ -775,6 +774,9 @@
 		constructor: Request,
 		clone: function (){
 			return	new Request(this.url);
+		},
+		toString: function (){
+			this.url;
 		}
 	};
 
