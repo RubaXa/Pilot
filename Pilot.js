@@ -24,6 +24,19 @@
 (function (window){
 	"use strict";
 
+	/** @namespace window.performance.now  -- https://developer.mozilla.org/en-US/docs/Web/API/window.performance.now */
+	var performance = window.performance || {};
+	performance.now = (function() {
+		return (
+			   performance.now
+			|| performance.mozNow
+			|| performance.msNow
+			|| performance.oNow
+			|| performance.webkitNow
+		);
+	})();
+
+
 	var
 		  gid		= 0
 		, noop		= function (){}
@@ -54,7 +67,12 @@
 			var permission = route.accessPermission, access = Router.access[permission];
 			return	permission === void 0 || (access ? access(req) : false);
 		}
+
+		, _now = performance.now ? function (){ return performance.now(); } : function (){ return (new Date).getTime(); }
+		, _timeStart = function (ctx, label){ ctx._profilerTimers.push([label, _now(), 0]); }
+		, _timeEnd = function (ctx, label){ ctx._profilerTimers.push([label, _now(), 1]); }
 	;
+
 
 
 
@@ -150,14 +168,13 @@
 			// call the parent method
 			Emitter.fn.__lego.call(this);
 
-			this.options = options = _extend({
+			this.options	= options = _extend({
 				  el: null
 				, selector: 'a[href],[data-nav]'
 				, basePath: '/'
 				, production: window.Pilot && window.Pilot.production
 				, useHistory: false
 			}, options);
-
 
 			this.items		= [];
 			this.itemsIdx	= {};
@@ -174,6 +191,29 @@
 				}));
 			}
 
+			if( options.profile ){
+				_profilerWrap(this, 'emit', true);
+				_each({
+					  'prepare': '_getUnits'
+					, 'load data': '_loadUnits'
+					, 'do routes': '_doRouteUnits'
+				}, function (methodName, label){
+					_profilerWrap(this, methodName, 0, 0, label);
+				}, this);
+
+				var _navFn = this.nav;
+				this.nav = function (){
+					var _this = this, _timers = _this._profilerTimers = [];
+
+					_timeStart(_this, 'Pilot');
+
+					return	_navFn.apply(_this, arguments).always(function (){
+						_timeEnd(_this, 'Pilot');
+						_this.emit('profile', [_timers]);
+						_profilerPrint(_this.request.path, _timers);
+					});
+				};
+			}
 
 			// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
 			options.el && $(options.el).delegate(options.selector, 'click', _bind(this, function (evt){
@@ -320,21 +360,25 @@
 				  queue = []
 				, accessQueue = []
 				, task
+				, dfd
 				, access
 				, accessDenied
 				, units
 				, promise
 				, production = this.options.production
-				, addSubview = function (view, name){
-					if( !view.__self ){
-						view = new view({ inited: false });
-						view.el = view.el || '[data-subview-id="'+name+'"]';
-						view.router = this.router;
-						view.parentView = this;
-						this.subviews[name] = view;
+				, addSubRoute = function (route, name){
+					if( !route.__self ){
+						route = new route({
+							router: this.router,
+							inited: false,
+							parentRoute: this,
+							subrouteName: name
+						});
+						route.el = route.el || '[data-subview-id="'+name+'"]';
+						this.subroutes[name] = route;
 					}
-					view.requestParams = this.requestParams;
-					units.push(view);
+					route.requestParams = this.requestParams;
+					units.push(route);
 				}
 			;
 
@@ -344,6 +388,9 @@
 			while( task = units.shift() ){
 				if( task && task.isActive(originUnits) ){
 					req.params = task.requestParams;
+
+					dfd = null;
+					_routeError(task, null);
 
 					access = _getRouteAccess(task, req);
 					accessDenied = task.accessDeniedRedirectTo && {
@@ -360,34 +407,32 @@
 						accessQueue.push(access);
 					}
 
-					_each(task.subviews, addSubview, task);
+					_each(task.subroutes, addSubRoute, task);
 
 					if( task.loadData ){
 						if( !access || !access.then ){
 							if( production ){
 								try {
-									task = task.loadData(req, this._navByHistory);
+									dfd = task.loadData(req, this._navByHistory);
 								}
 								catch( err ){
-									task = defer().reject(err);
+									dfd = defer().reject(err);
 									err.name = 'loadData';
 									this.emit('error', err, req);
 								}
 							}
 							else {
-								task = task.loadData(req, this._navByHistory);
+								dfd = task.loadData(req, this._navByHistory);
 							}
 						}
 						else {
-							task = _bind(task, 'loadData', req, this._navByHistory);
+							dfd = _bind(task, 'loadData', req, this._navByHistory);
 						}
 					}
 
-					if( _isArray(task) ){
-						units.push.apply(units, task);
-					}
-					else if( task ){
-						queue.push(task);
+					if( dfd ){
+						dfd.fail && dfd.fail(_bind(null, _routeError, task));
+						queue.push(dfd);
 					}
 
 					delete req.params;
@@ -415,7 +460,9 @@
 
 		_doRouteUnits: function (request/**Pilot.Request*/, items){
 			var
-				production = this.options.production,
+				options = this.options,
+				profile = options.profile,
+				production = options.production,
 				_tryEmit = _bind(this, function (unit, name, req){
 					if( production ){
 						try {
@@ -423,6 +470,7 @@
 						} catch( err ){
 							err.name = name.replace('-', '');
 							this.emit('error', err, req);
+							_routeError(unit, err);
 						}
 					}
 					else {
@@ -438,6 +486,10 @@
 					, params = []
 					, req = request.clone()
 				;
+
+				if( profile && unit.__self ){
+					_timeStart(this, '#'+unit.getRouteName());
+				}
 
 				req.params = params;
 
@@ -468,6 +520,10 @@
 					unit.request = req;
 					_tryEmit(unit, 'route-end', req);
 				}
+
+				if( profile && unit.__self ){
+					_timeEnd(this, '#'+unit.getRouteName());
+				}
 			}, this);
 		},
 
@@ -496,7 +552,7 @@
 
 				var delta = new Date - this.__ts;
 				this.emit('route', [req, delta]);
-				this.log('Pilot.nav: '+ delta +'ms ('+ req.path + req.search +')');
+//				this.log('Pilot.nav: '+ delta +'ms ('+ req.path + req.search +')');
 			}
 		},
 
@@ -549,6 +605,13 @@
 					this.log(str);
 				}
 			}
+		},
+
+
+		getFailRoutes: function (){
+			return	$(this.activeUnits).filter(function (i, unit){
+				return !!unit.getRouteError();
+			}).get();
 		},
 
 
@@ -776,7 +839,7 @@
 			return	new Request(this.url);
 		},
 		toString: function (){
-			this.url;
+			return	this.url;
 		}
 	};
 
@@ -817,17 +880,39 @@
 		data: {},
 		boundAll: [],
 		paramsRules: {},
+		subroutes: null,
 
 		__lego: function (options){
 			Emitter.fn.__lego.call(this);
 
 			_extend(this, options);
 
+			// ugly
+			this.subroutes = this.subroutes || this.subviews;
+
 			_each(this.boundAll, function (name){
 				// Link method to context
 				this[name] = this.bound(name);
 			}, this);
 
+			if( this.router && this.router.options.profile ){
+				_each({
+					  init: 0 /* methodname => isEvent*/
+					, loadData: 0
+					, render: 0
+					, emit: 1
+				}, function (isEvent, method){
+					_profilerWrap(this, method, isEvent, 1);
+				}, this);
+			}
+
+			this.on('routestart route routechange routeend', this.bound(function (evt, req){
+				var type = evt.type.substr(5);
+				type = type ? 'route-' + type : 'route';
+				_each(this.subroutes, function (view){
+					view.emit(type, req);
+				});
+			}));
 
 			if( this.inited !== false ){
 				this.__init();
@@ -863,6 +948,10 @@
 			return	_bind(this, fn);
 		},
 
+		getRouteError: function (){
+			return	this._routeError;
+		},
+
 		/** @protected */
 		init: noop,
 
@@ -874,6 +963,11 @@
 
 
 		getUrl: function (id, params, extra){
+			if( typeof id != 'string' ){
+				extra = params;
+				params = id;
+				id = this.id;
+			}
 			return	this.router.getUrl(id, params, extra);
 		},
 
@@ -890,6 +984,13 @@
 
 		getData: function (){
 			return	this.data;
+		},
+
+
+		getRouteName: function (){
+			return	  (this.parentRoute ? this.parentRoute.getRouteName()+'.' : '')
+					+ (this.id || this.subrouteName  || this.uniqId)
+			;
 		}
 
 	});
@@ -911,7 +1012,6 @@
 		template: null,
 
 		events: {},
-		subviews: null,
 
 		__init: function (){
 			this.inited	= true;
@@ -955,24 +1055,16 @@
 			}
 
 
-			this.on('routestart.view routechange.view routeend.view', this.bound(function (evt, req){
-				var type = evt.type;
-
-				if( type !== 'routechange' ){
-					this.toggleView(type != 'routeend');
-				}
-
-				_each(this.subviews, function (view){
-					view.emit(type, req);
-				});
+			this.on('routestart.view routeend.view', this.bound(function (evt){
+				this.toggleView(evt.type != 'routeend');
 			}));
 
 
 			// Call the parent method
 			Route.fn.__init.call(this);
 
-			// Init subviews
-			_each(this.subviews, function (view){
+			// Init subroutes
+			_each(this.subroutes, function (view){
 				view.parentNode = this.el;
 				view.__init();
 			}, this);
@@ -1129,6 +1221,87 @@
 	}
 
 
+	function _profilerWrap(ctx, methodName, isEvent, isRoute, prefix){
+		var originalFn = ctx[methodName];
+		ctx[methodName] = function (event){
+			var
+				router = isRoute ? ctx.router : ctx, ret,
+				label = (isRoute ? '#'+ctx.getRouteName()+'.' : '')
+					+ (prefix || methodName)
+					+ (isEvent ? '.'+event : '')
+			;
+
+			(!isEvent || event !== 'profile') && _timeStart(router, label);
+			ret = originalFn.apply(ctx, arguments);
+			(!isEvent || event !== 'profile') && _timeEnd(router, label);
+
+			return	ret;
+		};
+	}
+
+
+	function _profilerPrint(path, timers){
+		var
+			  i = 0, n = timers.length
+			, groups = [], cur, next, dt
+			, _colors = ['#ccc', '#666', '#333', '#c00', 'red']
+		;
+
+		for( ; i < n; i++ ){
+			cur = timers[i];
+			next = timers[i+1];
+
+			if( next && cur[0] == next[0] && next[2] ){
+				// one
+				dt = cur[1] - timers[i-1][1];
+				if( dt > 0.1 ){
+					groups.push({ name: '<<beetwen>>', dt: dt });
+				}
+
+				groups.push({ name: cur[0], dt: next[1] - cur[1] });
+				i++;
+			}
+			else if( cur[2] ) {
+				// Close
+				groups.dt += cur[1];
+				groups = groups.parent;
+			}
+			else {
+				// Open
+				var sub = [];
+				sub.parent = groups;
+				sub.name = cur[0];
+				sub.dt = -cur[1];
+				groups.push(sub);
+				groups = sub;
+			}
+		}
+
+		function toFixed(val){
+			return	val.toFixed(4);
+		}
+
+		function print(group, depth){
+			var i = 0, n = group.length;
+			if( n ){
+				console[depth && n > 2 && console.groupCollapsed ? 'groupCollapsed' : 'group'](group.name+':', toFixed(group.dt)+'ms');
+				for( ; i < n; i++ ){
+					print(group[i], 1);
+				}
+				console.groupEnd();
+			} else {
+				var dt = toFixed(group.dt);
+				console.log(
+					'%c '+group.name+': '+dt
+					, 'color: '+ _colors[(dt < 1)+(dt>1)+(dt>4)+(dt>8)+(dt>10)]
+						+ (dt > 20 ? '; font-weight: bold' : '')
+				);
+			}
+		}
+
+		groups[0].name = 'Pilot '+path;
+		print(groups[0]);
+	}
 
 
 	/**
@@ -1201,6 +1374,11 @@
 		}
 
 		return regexp.test(req.path);
+	}
+
+
+	function _routeError(route, error){
+		route._routeError = error;
 	}
 
 

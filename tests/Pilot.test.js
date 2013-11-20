@@ -586,4 +586,42 @@
 			equal(log.join('->'), '[beforeroute]->loadData->resolve->route->[route]');
 		}, 700);
 	});
+
+
+	test('errors', function (){
+		var log = [];
+		var Router = new Pilot({ production: true });
+
+		Router.on('error', function (evt, err){
+			log.push(err);
+		});
+
+		Router.route('LOAD', '/load', { loadData: function (){ throw "e:load"; } });
+		Router.route('ROUTE', '/route/:id?', {
+			onRouteStart: function (){ throw "e:start"; },
+			onRoute: function (){ throw "e:route"; },
+			onRouteEnd: function (){ throw "e:end"; }
+		});
+		Router.route('ROUTE-123', '/route/123', { onRouteStart: function (){ throw "e:123"; } });
+
+		Router.nav('/load');
+		equal(log.join('->'), 'e:load');
+		equal(Router.getFailRoutes()[0].id, 'LOAD');
+		equal(Router.getFailRoutes().length, 1);
+
+		Router.nav('/route');
+		equal(log.join('->'), 'e:load->e:start->e:route');
+		equal(Router.getFailRoutes()[0].id, 'ROUTE');
+		equal(Router.getFailRoutes().length, 1);
+
+		Router.nav('/route/123');
+		equal(log.join('->'), 'e:load->e:start->e:route->e:route->e:123');
+		equal(Router.getFailRoutes()[0].id, 'ROUTE');
+		equal(Router.getFailRoutes()[1].id, 'ROUTE-123');
+		equal(Router.getFailRoutes().length, 2);
+
+		Router.nav('/exit');
+		equal(log.join('->'), 'e:load->e:start->e:route->e:route->e:123->e:end');
+		equal(Router.getFailRoutes().length, 0);
+	});
 })(jQuery);
