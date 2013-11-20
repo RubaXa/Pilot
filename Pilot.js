@@ -20,7 +20,7 @@
  *	Moses.go('blog-post', { id: 2 });
  */
 
-/*global window, define, unescape*/
+/*global window, define, unescape, ajs*/
 (function (window){
 	"use strict";
 
@@ -203,15 +203,15 @@
 
 				var _navFn = this.nav;
 				this.nav = function (){
-					var _this = this, _timers = _this._profilerTimers = [];
-
-					_timeStart(_this, 'Pilot');
-
-					return	_navFn.apply(_this, arguments).always(function (){
+					var _this = this, _timers = _this._profilerTimers = [], print = function (){
 						_timeEnd(_this, 'Pilot');
 						_this.emit('profile', [_timers]);
 						_profilerPrint(_this.request.path, _timers);
-					});
+					};
+
+					_timeStart(_this, 'Pilot');
+
+					return	_navFn.apply(_this, arguments).then(print, print);
 				};
 			}
 
@@ -552,7 +552,11 @@
 
 				var delta = new Date - this.__ts;
 				this.emit('route', [req, delta]);
-//				this.log('Pilot.nav: '+ delta +'ms ('+ req.path + req.search +')');
+				this.emit('routeend', [req, delta]);
+
+				if( !this.options.profile ){
+					this.log('Pilot.nav: '+ delta +'ms ('+ req.path + req.search +')');
+				}
 			}
 		},
 
@@ -1056,7 +1060,7 @@
 
 
 			this.on('routestart.view routeend.view', this.bound(function (evt){
-				this.toggleView(evt.type != 'routeend');
+				this._toggleView(evt.type != 'routeend');
 			}));
 
 
@@ -1071,7 +1075,7 @@
 		},
 
 
-		toggleView: function (vis){
+		_toggleView: function (vis){
 			this.$el && this.$el.css('display', vis ? '' : 'none');
 		},
 
@@ -1255,7 +1259,7 @@
 				// one
 				dt = cur[1] - timers[i-1][1];
 				if( dt > 0.1 ){
-					groups.push({ name: '<<beetwen>>', dt: dt });
+					groups.push({ name: '<<between>>', dt: dt });
 				}
 
 				groups.push({ name: cur[0], dt: next[1] - cur[1] });
@@ -1284,7 +1288,7 @@
 		function print(group, depth){
 			var i = 0, n = group.length;
 			if( n ){
-				console[depth && n > 2 && console.groupCollapsed ? 'groupCollapsed' : 'group'](group.name+':', toFixed(group.dt)+'ms');
+				console[depth && n > 2 && console.groupCollapsed ? 'groupCollapsed' : 'group'](group.name, '~', toFixed(group.dt));
 				for( ; i < n; i++ ){
 					print(group[i], 1);
 				}
@@ -1406,5 +1410,8 @@
 
 	if( typeof define === "function" && define.amd ){
 		define("Pilot", [], function (){ return Router; });
+	}
+	else if( window.ajs && ajs.loaded ){
+		ajs.loaded('{pilot}Pilot');
 	}
 })(typeof module !== 'undefined' && module.exports || window);
