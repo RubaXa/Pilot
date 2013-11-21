@@ -871,7 +871,7 @@ Set a new location.
 ### 1.4.0
 <ul>
 	<li>+ `profile` option</li>
-	<li>+ `subroutes`</li>
+	<li>+ `subroutes` & `subviews`</li>
 	<li>* catch errors</li>
 	<li>+ grunt-version task</li>
 </ul>

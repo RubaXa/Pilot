@@ -624,4 +624,49 @@
 		equal(log.join('->'), 'e:load->e:start->e:route->e:route->e:123->e:end');
 		equal(Router.getFailRoutes().length, 0);
 	});
+
+
+	test('subroutes & subviews', function (){
+		var log = [];
+		var Router = new Pilot;
+		var ctrl = {};
+
+		ctrl.init = function (){
+			log.push(this.getRouteName() + '.init');
+		};
+
+		ctrl.loadData = function (req){
+			log.push(this.getRouteName() +'.load:'+ req.path);
+		};
+
+		ctrl.onRouteStart = ctrl.onRoute = ctrl.onRouteChange = ctrl.onRouteEnd = function (evt, req){
+			log.push(this.getRouteName() +'.'+ evt.type +':'+ req.path);
+		};
+
+		Router.route('idx', '/', {
+			subroutes: {
+				menu: Pilot.Route.extend(ctrl)
+			}
+		});
+
+		Router.route('sub', '/:name', Pilot.View.extend({
+			subviews: {
+				content: Pilot.Route.extend(ctrl)
+			}
+		}));
+
+		log = [];
+		Router.nav('/');
+		equal(log.join('->'), 'idx.menu.load:/->idx.menu.init->idx.menu.routestart:/->idx.menu.route:/');
+
+		log = [];
+		Router.nav('/1/');
+		Router.nav('/2/');
+		Router.nav('/exit/exit/');
+		equal(log.join('->'),
+			'sub.content.load:/1/->idx.menu.routeend:/1/' +
+			'->sub.content.init->sub.content.init->sub.content.routestart:/1/->sub.content.route:/1/' +
+			'->sub.content.load:/2/->sub.content.route:/2/->sub.content.routechange:/2/' +
+			'->sub.content.routeend:/exit/exit/');
+	});
 })(jQuery);

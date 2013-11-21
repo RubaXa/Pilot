@@ -193,6 +193,7 @@
 
 			if( options.profile ){
 				_profilerWrap(this, 'emit', true);
+
 				_each({
 					  'prepare': '_getUnits'
 					, 'load data': '_loadUnits'
@@ -900,6 +901,8 @@
 			}, this);
 
 			if( this.router && this.router.options.profile ){
+				_profilerWrap(this, '__initSub', 0, 1, 'subroutes');
+
 				_each({
 					  init: 0 /* methodname => isEvent*/
 					, loadData: 0
@@ -927,9 +930,15 @@
 			this.inited = true;
 			this.emit('beforeInit');
 			this.init();
+			this.subroutes && this.__initSub();
 			this.emit('init');
 		},
 
+		__initSub: function (){
+			for( var name in this.subroutes ){
+				this.subroutes[name].__init();
+			}
+		},
 
 		_exception: function (method, text){
 			throw '['+this.uniqId+'.'+method+']: '+text;
@@ -1405,7 +1414,7 @@
 
 
 	// @export
-	Router.version	= '1.3.0';
+	Router.version	= '1.4.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){
