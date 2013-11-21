@@ -895,8 +895,8 @@ Set a new location.
 	<li>[#4](https://github.com/RubaXa/Pilot/pull/4): Added Pilot.Request.</li>
 	<li>+ Pilot.utils.each</li>
 	<li>+ Pilot.utils.extend</li>
-	<li>+ Pilot.utils.qs.parse(queryString)/**Object*/<li>
-	<li>+ Pilot.utils.qs.stringify(queryObject)/**String*/<li>
+	<li>+ Pilot.utils.qs.parse(queryString)`:Object`<li>
+	<li>+ Pilot.utils.qs.stringify(queryObject)`:String`<li>
 </ul>
 
 ### 1.1.0
