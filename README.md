@@ -868,12 +868,15 @@ Set a new location.
 <a name="changelog"></a>
 ## Changelog
 
+### 1.4.0
 <ul>
+	<li>+ `profile` option</li>
+	<li>+ `subroutes` & `subviews`</li>
 	<li>* catch errors</li>
 	<li>+ grunt-version task</li>
 </ul>
 
-### 1.3
+### 1.3.0
 <ul>
 	<li>+ `paramsRules` route option</li>
 	<li>+ `accessPermission` route option</li>
