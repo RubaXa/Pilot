@@ -369,15 +369,21 @@
 				, production = this.options.production
 				, addSubRoute = function (route, name){
 					if( !route.__self ){
+						if( !route.fn || !route.fn.__lego ){
+							route = View.extend(route);
+						}
+
 						route = new route({
 							router: this.router,
 							inited: false,
 							parentRoute: this,
 							subrouteName: name
 						});
+
 						route.el = route.el || '[data-subview-id="'+name+'"]';
 						this.subroutes[name] = route;
 					}
+
 					route.requestParams = this.requestParams;
 					units.push(route);
 				}
@@ -569,7 +575,6 @@
 				var redirectTo = opts.redirectTo;
 
 				this.activeRequest = null;
-				this.emit('route-fail', req, opts);
 
 				if( redirectTo ){
 					if( redirectTo === '..' ){
@@ -589,7 +594,11 @@
 						redirectTo = this.getUrl(redirectTo, opts.redirectParams);
 					}
 
+					this.request = req; // for correct `referrer`
 					this.nav(redirectTo);
+				}
+				else {
+					this.emit('route-fail', req, opts);
 				}
 			}
 		},
@@ -792,9 +801,10 @@
 	/**
 	 * @class	Pilot.Request
 	 * @constructor
-	 * @param {string} url
+	 * @param {String} url
+	 * @param {String} [referrer]
 	 */
-	function Request(url){
+	function Request(url, referrer){
 		if( !_rhttp.test(url) ){
 			if( '/' == url.charAt(0) ){
 				url = '//' + location.hostname + url;
@@ -837,11 +847,12 @@
 		_this.pathname	= path;
 		_this.hash		= url.replace(/^[^#]+#/, '');
 		_this.params	= {};
+		_this.referrer	= referrer;
 	}
 	Request.fn = Request.prototype = {
 		constructor: Request,
 		clone: function (){
-			return	new Request(this.url);
+			return	new Request(this.url, this.referrer);
 		},
 		toString: function (){
 			return	this.url;
@@ -1413,8 +1424,117 @@
 	Router.Request	= Request;
 
 
+	/**
+	 * Create application
+	 * @param   {Object}  options
+	 * @param   {Object}  [sitemap]
+	 * @returns {Pilot}
+	 */
+	Router.create = function (options, sitemap){
+		if( !sitemap ){
+			sitemap = options;
+			options = {};
+		}
+
+
+		// Prepare routes
+		var routes = (function _build(sitemap, path, parent){
+			var
+				  key
+				, val
+				, route = {
+					  id:	sitemap.id || ++gid
+					, opts:	{ }
+					, path:	path = path.replace(/\/\.?\/+/g, '/')
+				}
+				, routes = [route]
+			;
+
+			// Default view
+			route.opts.el = '[data-view-id="'+ route.id +'"]';
+
+			if( parent && parent.paramsRules ){
+				route.paramsRules = _extend({}, parent.paramsRules, route.paramsRules);
+			}
+
+			if( 'function' === typeof sitemap ){
+				route.opts.onRoute = function (evt, req){
+					var scope = this.router.get(parent.id);
+					sitemap.call(scope, req);
+				};
+			}
+			else {
+				for( key in sitemap ){
+					val = sitemap[key];
+
+					if( 'id' == key || 'ctrl' == key ){
+						route[key] = val;
+					}
+					else if( '404' == key ){
+						route.dir = true;
+						route[key] = _build(val, path, route)[0];
+					}
+					else if( /^\.?\//.test(key) ){ // route path
+						route.dir = true;
+						routes.push.apply(routes, _build(val, path + key, route));
+					}
+					else {
+						// route option
+						route.opts[key] = val;
+					}
+				}
+			}
+
+			return	routes;
+		})(sitemap, '/');
+
+
+		// App view
+		options.el = routes[0].opts.el;
+
+
+		// Build application
+		var app = new Router(options);
+		_each(routes, function (route){
+			var p404 = route['404'];
+
+			route.opts.__dir = route.dir;
+
+			app.addRoute(
+				  route.id
+				, route.path + (route.dir ? '?*' : '')
+				, route.ctrl || View
+				, route.opts
+			);
+
+			if( p404 ){
+				p404.opts.__404 = true; // is 404 page
+				p404.opts.isActive = function (routes){
+					var i = 0, n = routes.length, route, p404;
+					for( ; i < n; i++ ){
+						route = routes[i];
+						if( route.__404 ){
+							p404 = route;
+						}
+						else if( !route.__dir ){
+							return	false;
+						}
+					}
+					return	this === p404;
+				};
+
+				// add 404 controller
+				app.route(p404.id, p404.path+'*', p404.ctrl || View, p404.opts);
+			}
+		});
+
+
+		return	app;
+	};
+
+
 	// @export
-	Router.version	= '1.4.0';
+	Router.version	= '1.5.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){

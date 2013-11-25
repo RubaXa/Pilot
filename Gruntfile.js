@@ -6,10 +6,7 @@ module.exports = function (grunt){
 		pkg: grunt.file.readJSON('package.json'),
 
 		jshint: {
-			all: [
-				  'Pilot.js'
-				, 'tests/*.js'
-			],
+			all: ['Pilot.js'],
 
 			options: {
 				  curly:	true	// + "Expected '{' and instead saw 'XXXX'."
