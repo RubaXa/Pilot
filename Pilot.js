@@ -217,7 +217,7 @@
 			}
 
 			// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
-			options.el && $(options.el).delegate(options.selector, 'click', _bind(this, function (evt){
+			options.el && $(options.el).delegate(options.selector, 'click tap', _bind(this, function (evt){
 				this.nav( Router.getLocation( evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href') ) );
 				evt.preventDefault();
 			}));
@@ -369,15 +369,21 @@
 				, production = this.options.production
 				, addSubRoute = function (route, name){
 					if( !route.__self ){
+						if( !route.fn || !route.fn.__lego ){
+							route = View.extend(route);
+						}
+
 						route = new route({
 							router: this.router,
 							inited: false,
 							parentRoute: this,
 							subrouteName: name
 						});
+
 						route.el = route.el || '[data-subview-id="'+name+'"]';
 						this.subroutes[name] = route;
 					}
+
 					route.requestParams = this.requestParams;
 					units.push(route);
 				}
@@ -391,7 +397,7 @@
 					req.params = task.requestParams;
 
 					dfd = null;
-					_routeError(task, null);
+					task.setRouteError(null);
 
 					access = _getRouteAccess(task, req);
 					accessDenied = task.accessDeniedRedirectTo && {
@@ -432,8 +438,18 @@
 					}
 
 					if( dfd ){
-						dfd.fail && dfd.fail(_bind(null, _routeError, task));
+						if( typeof dfd.then === 'function' ){
+							dfd.then(
+								  _bind(task, task.setLoadedData)
+								, _bind(task, task.setRouteError)
+							);
+						}
+
 						queue.push(dfd);
+					}
+
+					if( !dfd || typeof dfd.then !== 'function' ){
+						task.setLoadedData(dfd);
 					}
 
 					delete req.params;
@@ -471,7 +487,7 @@
 						} catch( err ){
 							err.name = name.replace('-', '');
 							this.emit('error', err, req);
-							_routeError(unit, err);
+							unit.setRouteError(err);
 						}
 					}
 					else {
@@ -569,7 +585,6 @@
 				var redirectTo = opts.redirectTo;
 
 				this.activeRequest = null;
-				this.emit('route-fail', req, opts);
 
 				if( redirectTo ){
 					if( redirectTo === '..' ){
@@ -589,7 +604,11 @@
 						redirectTo = this.getUrl(redirectTo, opts.redirectParams);
 					}
 
+					this.request = req; // for correct `referrer`
 					this.nav(redirectTo);
+				}
+				else {
+					this.emit('route-fail', req, opts);
 				}
 			}
 		},
@@ -667,7 +686,7 @@
 						;
 			}
 
-			return	path;
+			return	(Router.pushState ? '' : '#!') + path;
 		},
 
 
@@ -792,9 +811,10 @@
 	/**
 	 * @class	Pilot.Request
 	 * @constructor
-	 * @param {string} url
+	 * @param {String} url
+	 * @param {String} [referrer]
 	 */
-	function Request(url){
+	function Request(url, referrer){
 		if( !_rhttp.test(url) ){
 			if( '/' == url.charAt(0) ){
 				url = '//' + location.hostname + url;
@@ -837,11 +857,12 @@
 		_this.pathname	= path;
 		_this.hash		= url.replace(/^[^#]+#/, '');
 		_this.params	= {};
+		_this.referrer	= referrer;
 	}
 	Request.fn = Request.prototype = {
 		constructor: Request,
 		clone: function (){
-			return	new Request(this.url);
+			return	new Request(this.url, this.referrer);
 		},
 		toString: function (){
 			return	this.url;
@@ -891,6 +912,14 @@
 			Emitter.fn.__lego.call(this);
 
 			_extend(this, options);
+
+			if( this.loadDataOnce ){
+				this.loadData = function (req){
+					var ret = this.loadDataOnce(req);
+					this.loadData = function (){ return ret; };
+					return	ret;
+				};
+			}
 
 			// ugly
 			this.subroutes = this.subroutes || this.subviews;
@@ -948,8 +977,6 @@
 		isActive: function (){
 			return	true;
 		},
-
-
 		bound: function (fn){
 			if( typeof fn === 'string' ){
 				if( this[fn] === undef ){
@@ -959,6 +986,11 @@
 			}
 
 			return	_bind(this, fn);
+		},
+
+		setRouteError: function (err){
+			this._routeError = err;
+			return	this;
 		},
 
 		getRouteError: function (){
@@ -972,8 +1004,10 @@
 		loadData: noop,
 
 		/** @protected */
-		destroy: noop,
+		loadDataOnce: null,
 
+		/** @protected */
+		destroy: noop,
 
 		getUrl: function (id, params, extra){
 			if( typeof id != 'string' ){
@@ -984,6 +1018,14 @@
 			return	this.router.getUrl(id, params, extra);
 		},
 
+		setLoadedData: function (data){
+			this.loadedData = data;
+			return	this;
+		},
+
+		getLoadedData: function (){
+			return	this.loadedData;
+		},
 
 		setData: function (data, merge){
 			if( merge ){
@@ -994,11 +1036,9 @@
 			return	this;
 		},
 
-
 		getData: function (){
 			return	this.data;
 		},
-
 
 		getRouteName: function (){
 			return	  (this.parentRoute ? this.parentRoute.getRouteName()+'.' : '')
@@ -1023,6 +1063,7 @@
 		className: '',
 		parentNode: null,
 		template: null,
+		toggleEffect: 'toggle',
 
 		events: {},
 
@@ -1068,8 +1109,8 @@
 			}
 
 
-			this.on('routestart.view routeend.view', this.bound(function (evt){
-				this._toggleView(evt.type != 'routeend');
+			this.on('routestart.view routeend.view', this.bound(function (evt, req){
+				this._toggleView(evt.type != 'routeend', req);
 			}));
 
 
@@ -1084,8 +1125,9 @@
 		},
 
 
-		_toggleView: function (vis){
-			this.$el && this.$el.css('display', vis ? '' : 'none');
+		_toggleView: function (state, req){
+			var effect = View.toggleEffect[this.toggleEffect];
+			this.$el && effect && effect.call(this, this.$el, state, req);
 		},
 
 
@@ -1158,6 +1200,25 @@
 	});
 	// View;
 
+
+	/**
+	 * Get/set toggle view effect
+	 * @param {String} name
+	 * @param {Function} [fn]
+	 * @return {Function}
+	 */
+	View.toggleEffect = function (name, fn){
+		if( fn ){
+			View.toggleEffect[name] = fn;
+		}
+		return	View.toggleEffect[name];
+	};
+
+
+	// Preset: toggle
+	View.toggleEffect('toggle', function ($el, state){
+		$el.css('display', state ? '' : 'none');
+	});
 
 
 	function _each(obj, fn, ctx){
@@ -1372,7 +1433,7 @@
 				val = 'string' == typeof m[i] ? decodeURIComponent(m[i]) : m[i];
 
 				if( key ){
-					if( !key.rule || key.rule(val, req) === true ){
+					if( key.rule == null || key.rule(val, req) === true ){
 						params[key.name] = val;
 					}
 					else {
@@ -1387,11 +1448,6 @@
 		}
 
 		return regexp.test(req.path);
-	}
-
-
-	function _routeError(route, error){
-		route._routeError = error;
 	}
 
 
@@ -1413,8 +1469,117 @@
 	Router.Request	= Request;
 
 
+	/**
+	 * Create application
+	 * @param   {Object}  options
+	 * @param   {Object}  [sitemap]
+	 * @returns {Pilot}
+	 */
+	Router.create = function (options, sitemap){
+		if( !sitemap ){
+			sitemap = options;
+			options = {};
+		}
+
+
+		// Prepare routes
+		var routes = (function _build(sitemap, path, parent){
+			var
+				  key
+				, val
+				, route = {
+					  id:	sitemap.id || ++gid
+					, opts:	{ }
+					, path:	path = path.replace(/\/\.?\/+/g, '/')
+				}
+				, routes = [route]
+			;
+
+			// Default view
+			route.opts.el = '[data-view-id="'+ route.id +'"]';
+
+			if( parent && parent.paramsRules ){
+				route.paramsRules = _extend({}, parent.paramsRules, route.paramsRules);
+			}
+
+			if( 'function' === typeof sitemap ){
+				route.opts.onRoute = function (evt, req){
+					var scope = this.router.get(parent.id);
+					sitemap.call(scope, req);
+				};
+			}
+			else {
+				for( key in sitemap ){
+					val = sitemap[key];
+
+					if( 'id' == key || 'ctrl' == key ){
+						route[key] = val;
+					}
+					else if( '404' == key ){
+						route.dir = true;
+						route[key] = _build(val, path, route)[0];
+					}
+					else if( /^\.?\//.test(key) ){ // route path
+						route.dir = true;
+						routes.push.apply(routes, _build(val, path + key, route));
+					}
+					else {
+						// route option
+						route.opts[key] = val;
+					}
+				}
+			}
+
+			return	routes;
+		})(sitemap, '/');
+
+
+		// App view
+		options.el = routes[0].opts.el;
+
+
+		// Build application
+		var app = new Router(options);
+		_each(routes, function (route){
+			var p404 = route['404'];
+
+			route.opts.__dir = route.dir;
+
+			app.addRoute(
+				  route.id
+				, route.path + (route.dir ? '?*' : '')
+				, route.ctrl || View
+				, route.opts
+			);
+
+			if( p404 ){
+				p404.opts.__404 = true; // is 404 page
+				p404.opts.isActive = function (routes){
+					var i = 0, n = routes.length, route, p404;
+					for( ; i < n; i++ ){
+						route = routes[i];
+						if( route.__404 ){
+							p404 = route;
+						}
+						else if( !route.__dir ){
+							return	false;
+						}
+					}
+					return	this === p404;
+				};
+
+				// add 404 controller
+				app.route(p404.id, p404.path+'*', p404.ctrl || View, p404.opts);
+			}
+		});
+
+
+		return	app;
+	};
+
+
 	// @export
-	Router.version	= '1.4.0';
+	Router.version	= '1.5.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){
