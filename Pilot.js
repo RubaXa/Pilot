@@ -217,7 +217,7 @@
 			}
 
 			// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
-			options.el && $(options.el).delegate(options.selector, 'click', _bind(this, function (evt){
+			options.el && $(options.el).delegate(options.selector, 'click tap', _bind(this, function (evt){
 				this.nav( Router.getLocation( evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href') ) );
 				evt.preventDefault();
 			}));
@@ -397,7 +397,7 @@
 					req.params = task.requestParams;
 
 					dfd = null;
-					_routeError(task, null);
+					task.setRouteError(null);
 
 					access = _getRouteAccess(task, req);
 					accessDenied = task.accessDeniedRedirectTo && {
@@ -438,8 +438,18 @@
 					}
 
 					if( dfd ){
-						dfd.fail && dfd.fail(_bind(null, _routeError, task));
+						if( typeof dfd.then === 'function' ){
+							dfd.then(
+								  _bind(task, task.setLoadedData)
+								, _bind(task, task.setRouteError)
+							);
+						}
+
 						queue.push(dfd);
+					}
+
+					if( !dfd || typeof dfd.then !== 'function' ){
+						task.setLoadedData(dfd);
 					}
 
 					delete req.params;
@@ -477,7 +487,7 @@
 						} catch( err ){
 							err.name = name.replace('-', '');
 							this.emit('error', err, req);
-							_routeError(unit, err);
+							unit.setRouteError(err);
 						}
 					}
 					else {
@@ -676,7 +686,7 @@
 						;
 			}
 
-			return	path;
+			return	(Router.pushState ? '' : '#!') + path;
 		},
 
 
@@ -903,6 +913,14 @@
 
 			_extend(this, options);
 
+			if( this.loadDataOnce ){
+				this.loadData = function (req){
+					var ret = this.loadDataOnce(req);
+					this.loadData = function (){ return ret; };
+					return	ret;
+				};
+			}
+
 			// ugly
 			this.subroutes = this.subroutes || this.subviews;
 
@@ -959,8 +977,6 @@
 		isActive: function (){
 			return	true;
 		},
-
-
 		bound: function (fn){
 			if( typeof fn === 'string' ){
 				if( this[fn] === undef ){
@@ -970,6 +986,11 @@
 			}
 
 			return	_bind(this, fn);
+		},
+
+		setRouteError: function (err){
+			this._routeError = err;
+			return	this;
 		},
 
 		getRouteError: function (){
@@ -983,8 +1004,10 @@
 		loadData: noop,
 
 		/** @protected */
-		destroy: noop,
+		loadDataOnce: null,
 
+		/** @protected */
+		destroy: noop,
 
 		getUrl: function (id, params, extra){
 			if( typeof id != 'string' ){
@@ -995,6 +1018,14 @@
 			return	this.router.getUrl(id, params, extra);
 		},
 
+		setLoadedData: function (data){
+			this.loadedData = data;
+			return	this;
+		},
+
+		getLoadedData: function (){
+			return	this.loadedData;
+		},
 
 		setData: function (data, merge){
 			if( merge ){
@@ -1005,11 +1036,9 @@
 			return	this;
 		},
 
-
 		getData: function (){
 			return	this.data;
 		},
-
 
 		getRouteName: function (){
 			return	  (this.parentRoute ? this.parentRoute.getRouteName()+'.' : '')
@@ -1034,6 +1063,7 @@
 		className: '',
 		parentNode: null,
 		template: null,
+		toggleEffect: 'toggle',
 
 		events: {},
 
@@ -1079,8 +1109,8 @@
 			}
 
 
-			this.on('routestart.view routeend.view', this.bound(function (evt){
-				this._toggleView(evt.type != 'routeend');
+			this.on('routestart.view routeend.view', this.bound(function (evt, req){
+				this._toggleView(evt.type != 'routeend', req);
 			}));
 
 
@@ -1095,8 +1125,9 @@
 		},
 
 
-		_toggleView: function (vis){
-			this.$el && this.$el.css('display', vis ? '' : 'none');
+		_toggleView: function (state, req){
+			var effect = View.toggleEffect[this.toggleEffect];
+			this.$el && effect && effect.call(this, this.$el, state, req);
 		},
 
 
@@ -1169,6 +1200,25 @@
 	});
 	// View;
 
+
+	/**
+	 * Get/set toggle view effect
+	 * @param {String} name
+	 * @param {Function} [fn]
+	 * @return {Function}
+	 */
+	View.toggleEffect = function (name, fn){
+		if( fn ){
+			View.toggleEffect[name] = fn;
+		}
+		return	View.toggleEffect[name];
+	};
+
+
+	// Preset: toggle
+	View.toggleEffect('toggle', function ($el, state){
+		$el.css('display', state ? '' : 'none');
+	});
 
 
 	function _each(obj, fn, ctx){
@@ -1383,7 +1433,7 @@
 				val = 'string' == typeof m[i] ? decodeURIComponent(m[i]) : m[i];
 
 				if( key ){
-					if( !key.rule || key.rule(val, req) === true ){
+					if( key.rule == null || key.rule(val, req) === true ){
 						params[key.name] = val;
 					}
 					else {
@@ -1398,11 +1448,6 @@
 		}
 
 		return regexp.test(req.path);
-	}
-
-
-	function _routeError(route, error){
-		route._routeError = error;
 	}
 
 

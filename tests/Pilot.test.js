@@ -221,13 +221,14 @@
 			.route('addressbook-search', '/addressbook/search/:query(/letter/:letter)', noop)
 		;
 
-		equal(Router.getUrl('blog'), '/blog/', 'blog [no]');
-		equal(Router.getUrl('blog', { id: 1 }), '/blog/1/', 'blog [id=1]');
-		equal(Router.getUrl('blog', { id: 1, search: 'abc' }), '/blog/1/abc/', 'blog [id,search]');
-		equal(Router.getUrl('blog', { id: 1, search: 'abc', page: 123 }), '/blog/1/abc/page/123', 'blog [id,search,page]');
+		Pilot.pushState = false;
+		equal(Router.getUrl('blog'), '#!/blog/', 'blog [no]');
+		equal(Router.getUrl('blog', { id: 1 }), '#!/blog/1/', 'blog [id=1]');
+		equal(Router.getUrl('blog', { id: 1, search: 'abc' }), '#!/blog/1/abc/', 'blog [id,search]');
+		equal(Router.getUrl('blog', { id: 1, search: 'abc', page: 123 }), '#!/blog/1/abc/page/123', 'blog [id,search,page]');
 
 
-
+		Pilot.pushState = true;
 		equal(Router.getUrl('addressbook-my'), '/addressbook/my/', 'addressbook-my [no]');
 		equal(Router.getUrl('addressbook-my', { letter: 1 }), '/addressbook/my/letter/1', 'addressbook-my [letter]');
 
@@ -402,6 +403,45 @@
 		});
 	});
 
+
+	test('Route.loadDataOnce + getLoadedData', function (){
+		var log = [];
+		var Router = new Pilot;
+
+		Router.route('/once-sync/:id', {
+			loadDataOnce: function (req){ return req.params.id; },
+			onRoute: function (evt, req){ log.push(this.getLoadedData()+'-'+req.params.id); }
+		});
+
+		Router.route('/once-dfd/:id', {
+			loadDataOnce: function (req){ return $.Deferred().resolve(req.params.id); },
+			onRoute: function (evt, req){ log.push(this.getLoadedData()+'-'+req.params.id); }
+		});
+
+		Router.route('/mixed/:id', {
+			loadData: function (req){
+				var id = req.params.id;
+				return (id % 2) ? $.Deferred().resolve(req.params.id) : id*10;
+			},
+			onRoute: function (evt, req){ log.push(this.getLoadedData()+'-'+req.params.id); }
+		});
+
+		Router.nav('/once-sync/foo');
+		Router.nav('/once-sync/bar');
+
+		Router.nav('/once-dfd/baz');
+		Router.nav('/once-dfd/qux');
+
+		Router.nav('/mixed/1');
+		Router.nav('/mixed/2');
+		Router.nav('/mixed/3');
+
+		equal(log.join(' -> '),
+			'foo-foo -> foo-bar -> ' +
+			'baz-baz -> baz-qux -> ' +
+			'1-1 -> 20-2 -> 3-3'
+		);
+	});
 
 
 	/**
