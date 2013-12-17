@@ -562,6 +562,8 @@
 					this.historyIdx = this.history.push(req.url) - 1;
 				}
 
+				this.emit('routestart', [req]);
+
 				// debatable, but there will be so.
 				if( this.items.length ){
 					this._doRouteUnits(req, this.items);
@@ -1579,7 +1581,7 @@
 
 
 	// @export
-	Router.version	= '1.5.0';
+	Router.version	= '1.5.1';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){
