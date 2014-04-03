@@ -7,6 +7,16 @@
 	 */
 	module('Pilot');
 
+	test('route', function (){
+		var Router = new Pilot;
+
+		Router.route('/foo', function (evt, req){
+			equal(evt.type, 'routestart');
+			equal(req.path, '/foo');
+		});
+
+		Router.nav('/foo');
+	});
 
 	test('crazy params', function (){
 		var Router = new Pilot, _log = {}, log = function (name, str){

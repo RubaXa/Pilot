@@ -19,11 +19,13 @@
 
 
 	<script src="../Pilot.js"></script>
+
 	<script>Pilot.production = /phantom/i.test(navigator.userAgent);</script>
 	<script src="Pilot.test.js"></script>
 	<script src="Pilot.access.test.js"></script>
 	<script src="Pilot.profiler.test.js"></script>
 	<script src="Pilot.app.test.js"></script>
+	<script src="Pilot.bench.test.js"></script>
 
 	<style>
 		.active { color: red; }
@@ -47,7 +49,7 @@
 		<div data-view-id="index" style="display: none">index page</div>
 		<div data-view-id="help" style="display: none">
 			help page
-			<div data-view-id="help-details" style="display: none"></div>
+			<div data-view-id="help-details" style="display: none">help-details</div>
 			<div data-view-id="help-404" style="display: none">404 page</div>
 		</div>
 	</div>

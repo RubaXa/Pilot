@@ -868,6 +868,15 @@ Set a new location.
 <a name="changelog"></a>
 ## Changelog
 
+### 1.6.0
+<ul>
+	<li>(!!) `emit` -> `trigger` (!!)</li>
+	<li>+ Support for alternative: `Deferred` & `Emitter`</li>
+	<li>+ `Pilot.Route.fn.setTemplate(fn)`</li>
+	<li>* Request: micro bug fixes</li>
+</ul>
+
+
 ### 1.5.0
 <ul>
 	<li>+ Pilot.create</li>

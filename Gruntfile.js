@@ -35,7 +35,7 @@ module.exports = function (grunt){
 		},
 
 		qunit: {
-			files: ['tests/**/*.html']
+			files: ['tests/index.html']
 		},
 
 		uglify: {
@@ -51,17 +51,19 @@ module.exports = function (grunt){
 	});
 
 
-	// These plugins provide necessary tasks.
 	grunt.loadNpmTasks('grunt-version');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-qunit');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 
 
-	// "npm test" runs these tasks
+	// Тестирование
 	grunt.registerTask('test', ['jshint', 'qunit']);
+
+	// Минификация
+	grunt.registerTask('min', ['uglify']);
 
 
 	// Default task.
-	grunt.registerTask('default', ['version', 'test', 'uglify']);
+	grunt.registerTask('default', ['version', 'test']);
 };

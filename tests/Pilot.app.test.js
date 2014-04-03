@@ -154,6 +154,4 @@ test('app', function (){
 	ok($('[data-view-id="help-404"]').is(':visible'), '404 visible');
 
 	app.nav('/');
-
-	console.log(app);
 });

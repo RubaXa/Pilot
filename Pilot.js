@@ -20,7 +20,7 @@
  *	Moses.go('blog-post', { id: 2 });
  */
 
-/*global window, define, unescape, ajs*/
+/*global window, define, unescape, ajs, Emitter*/
 (function (window){
 	"use strict";
 
@@ -42,13 +42,17 @@
 		, noop		= function (){}
 		, undef		= void 0
 
-		, $			= window.jQuery || window.Zepto || window.ender || noop
-		, defer		= $.Deferred
+		, $			= window.jQuery || window.Zepto || window.ender || window.$ || noop
+		, Deferred	= window.Deferred || $.Deferred
+		, Event		= window.Emitter && Emitter.Event || $.Event
+
 		, history	= window.history
 		, document	= window.document
 		, location	= window.location
 
-		, _rhttp	= /^(https?|file)/i
+		, _rhttp	= /^(?:https?|file)/i
+		, _rrclean	= /(?:^(?:https?|file):\/\/[^/]*|[?#].*)/g
+
 		, _slice	= [].slice
 		, _toStr	= {}.toString
 		, _bind		= function (ctx, fn){
@@ -59,7 +63,7 @@
 		}
 
 		, _isArray	= Array.isArray || $.isArray
-		, _when = function (args){
+		, _when = Deferred.all || Deferred.when || function (args){
 			return	$.when.apply($, args);
 		}
 
@@ -118,9 +122,9 @@
 
 
 	/**
-	 * @class	Emitter
+	 * @class	MyEmitter
 	 */
-	var Emitter = klass({
+	var MyEmitter = klass(window.Emitter && Emitter.fn || {
 		__lego: function (){
 			var $emitter = $(this);
 
@@ -132,11 +136,10 @@
 			}, this);
 		},
 
-
-		emit: function (name, args){
+		trigger: function (name, args){
 			var
 				  method = ('on-'+name).replace(/-(.)/g, function (a, b){ return b.toUpperCase(); })
-				, evt = $.Event(name.replace(/-/g, ''))
+				, evt = Event(name.replace(/-/g, '').toLowerCase())
 				, res
 			;
 
@@ -154,11 +157,10 @@
 
 
 
-
 	/**
 	 * @class	Pilot
 	 */
-	var Router = Emitter.extend({
+	var Router = MyEmitter.extend({
 
 		/**
 		 * @constructor
@@ -166,7 +168,7 @@
 		 */
 		__lego: function (options){
 			// call the parent method
-			Emitter.fn.__lego.call(this);
+			MyEmitter.fn.__lego.call(this);
 
 			this.options	= options = _extend({
 				  el: null
@@ -202,24 +204,35 @@
 					_profilerWrap(this, methodName, 0, 0, label);
 				}, this);
 
-				var _navFn = this.nav;
-				this.nav = function (){
+				var _navFn = this._nav;
+				this._nav = function (){
 					var _this = this, _timers = _this._profilerTimers = [], print = function (){
 						_timeEnd(_this, 'Pilot');
-						_this.emit('profile', [_timers]);
+						_this.trigger('profile', [_timers]);
 						_profilerPrint(_this.request.path, _timers);
 					};
 
 					_timeStart(_this, 'Pilot');
 
-					return	_navFn.apply(_this, arguments).then(print, print);
+					return	_navFn.apply(_this, arguments).done(print).fail(print);
 				};
 			}
 
 			// TODO: use "$(el).on('click', options.selector, ...)" instead of deprecated ".delegate(...)"
-			options.el && $(options.el).delegate(options.selector, 'click tap', _bind(this, function (evt){
-				this.nav( Router.getLocation( evt.currentTarget.getAttribute('data-nav') || evt.currentTarget.getAttribute('href') ) );
-				evt.preventDefault();
+			options.el && $() && $(options.el).delegate(options.selector, 'click tap', _bind(this, function (evt){
+				var el = evt.currentTarget,
+					url = el.getAttribute('data-nav') || el.getAttribute('href')
+				;
+
+				if (el.target != '_blank') {
+					evt.preventDefault();
+
+					if( url === 'back' || url === 'forward' ){
+						this[url]();
+					} else {
+						this.nav( Router.getLocation( url ) );
+					}
+				}
 			}));
 
 
@@ -269,7 +282,7 @@
 
 
 			// build path
-			if( $.type(path) !== 'regexp' ){
+			if( !path.source ){
 				path = (this.options.basePath + (path == '.' ? '' : path)).replace(/\/\//, '/');
 			}
 
@@ -406,8 +419,8 @@
 					};
 
 					if( !access ){
-						task.emit('access-denied', req);
-						return defer().reject(accessDenied);
+						task.trigger('accessDenied', req);
+						return Deferred().reject(accessDenied);
 					}
 					else if( access.then ){
 						access.denied = accessDenied;
@@ -416,6 +429,10 @@
 
 					_each(task.subroutes, addSubRoute, task);
 
+					if( task.templateUrl ){
+						queue.push(Router.loadTemplate(task.templateUrl, task).then(_bind(task, task.setTemplate)));
+					}
+
 					if( task.loadData ){
 						if( !access || !access.then ){
 							if( production ){
@@ -423,9 +440,9 @@
 									dfd = task.loadData(req, this._navByHistory);
 								}
 								catch( err ){
-									dfd = defer().reject(err);
+									dfd = Deferred().reject(err);
 									err.name = 'loadData';
-									this.emit('error', err, req);
+									this.trigger('error', err, req);
 								}
 							}
 							else {
@@ -443,9 +460,8 @@
 								  _bind(task, task.setLoadedData)
 								, _bind(task, task.setRouteError)
 							);
+							queue.push(dfd);
 						}
-
-						queue.push(dfd);
 					}
 
 					if( !dfd || typeof dfd.then !== 'function' ){
@@ -457,7 +473,7 @@
 			}
 
 			if( accessQueue.length ){
-				promise = defer();
+				promise = Deferred();
 
 				_when(accessQueue)
 					.then(function (){
@@ -471,7 +487,7 @@
 				promise	= _when(queue);
 			}
 
-			return	promise.promise();
+			return	promise;
 		},
 
 
@@ -483,15 +499,15 @@
 				_tryEmit = _bind(this, function (unit, name, req){
 					if( production ){
 						try {
-							unit.emit(name, req);
+							unit.trigger(name, req);
 						} catch( err ){
 							err.name = name.replace('-', '');
-							this.emit('error', err, req);
+							this.trigger('error', err, req);
 							unit.setRouteError(err);
 						}
 					}
 					else {
-						unit.emit(name, req);
+						unit.trigger(name, req);
 					}
 				})
 			;
@@ -520,7 +536,7 @@
 					if( unit.active !== true ){
 						routeChange = false;
 						unit.active = true;
-						_tryEmit(unit, 'route-start', req);
+						_tryEmit(unit, 'routeStart', req);
 					}
 					else if( true ){
 						// @todo: Проверить изменение параметров, если их нет, не вызывать событие
@@ -529,13 +545,13 @@
 					_tryEmit(unit, 'route', req);
 
 					if( routeChange ){
-						_tryEmit(unit, 'route-change', req);
+						_tryEmit(unit, 'routeChange', req);
 					}
 				}
 				else if( (unit.active === true) && !~$.inArray(unit, this.activeUnits) ){
 					unit.active = false;
 					unit.request = req;
-					_tryEmit(unit, 'route-end', req);
+					_tryEmit(unit, 'routeEnd', req);
 				}
 
 				if( profile && unit.__self ){
@@ -562,7 +578,7 @@
 					this.historyIdx = this.history.push(req.url) - 1;
 				}
 
-				this.emit('routestart', [req]);
+				this.trigger('routeStart', [req]);
 
 				// debatable, but there will be so.
 				if( this.items.length ){
@@ -570,8 +586,8 @@
 				}
 
 				var delta = new Date - this.__ts;
-				this.emit('route', [req, delta]);
-				this.emit('routeend', [req, delta]);
+				this.trigger('route', [req, delta]);
+				this.trigger('routeEnd', [req, delta]);
 
 				if( !this.options.profile ){
 					this.log('Pilot.nav: '+ delta +'ms ('+ req.path + req.search +')');
@@ -610,7 +626,7 @@
 					this.nav(redirectTo);
 				}
 				else {
-					this.emit('route-fail', req, opts);
+					this.trigger('routeFail', req, opts);
 				}
 			}
 		},
@@ -701,8 +717,8 @@
 
 		_nav: function (url, byHistory, force){
 			var
-				  df	= defer()
-				, req	= Router.parseURL(url.href || url.url || url)
+				  df	= Deferred()
+				, req	= Router.parseURL(url.href || url.url || url, this.request.url, this)
 			;
 
 			this.started = true;
@@ -710,12 +726,9 @@
 
 			if( force || !this.activeRequest || this.activeRequest.url != req.url ){
 				this.__ts = +new Date;
-				this.emit('before-route', [req, this.__ts]);
+				this.trigger('beforeRoute', [req, this.__ts]);
 
 				var units = this._getUnits(req, this.items);
-
-				// set request referrer
-				req.referrer		= this.request.url;
 
 				this.activeUnits	= units;
 				this.activeRequest	= req;
@@ -729,7 +742,7 @@
 				} else {
 					// not found
 					this._doRouteDone(req);
-					this.emit('404', req);
+					this.trigger('404', req);
 					df.reject();
 				}
 			}
@@ -737,7 +750,7 @@
 				df.resolve();
 			}
 
-			return	df.promise();
+			return	df;
 		},
 
 
@@ -750,12 +763,12 @@
 		 * @return	{jQuery.Deferred}
 		 */
 		nav: function (url, force, callback){
-			if( $.isFunction(force) ){
+			if( typeof force === 'function' ){
 				callback = force;
 				force = false;
 			}
 
-			return	this._nav(url, false, force).then(callback, callback);
+			return	this._nav(url.replace(/^#!/, ''), false, force).then(callback, callback);
 		},
 
 
@@ -768,7 +781,7 @@
 		 */
 		go: function (id, params){
 			var url = this.getUrl(id, params);
-			return	url ? this.nav(url) : defer().reject().promise();
+			return	url ? this.nav(url) : Deferred().reject();
 		},
 
 
@@ -786,7 +799,7 @@
 			if( this.hasBack() ){
 				return	this._nav(this.history[--this.historyIdx], true);
 			}
-			return	defer().resolve();
+			return	Deferred().resolve();
 		},
 
 
@@ -794,7 +807,7 @@
 			if( this.hasForward() ){
 				return	this._nav(this.history[++this.historyIdx], true);
 			}
-			return	defer().resolve();
+			return	Deferred().resolve();
 		}
 	});
 
@@ -802,11 +815,13 @@
 	/**
 	 * Parse URL method
 	 *
-	 * @param {String} url
+	 * @param  {String} url
+	 * @param  {String} [referrer]
+	 * @param  {Pilot}  [router]
 	 * @return {Pilot.Request}
 	 */
-	Router.parseURL = function(url){
-		return	new Request(url);
+	Router.parseURL = function(url, referrer, router){
+		return	new Request(url, referrer, router);
 	};
 
 
@@ -815,8 +830,9 @@
 	 * @constructor
 	 * @param {String} url
 	 * @param {String} [referrer]
+	 * @param  {Pilot} [router]
 	 */
-	function Request(url, referrer){
+	function Request(url, referrer, router){
 		if( !_rhttp.test(url) ){
 			if( '/' == url.charAt(0) ){
 				url = '//' + location.hostname + url;
@@ -841,8 +857,7 @@
 		var
 			  search	= (url.split('?')[1]||'').replace(/#.*/, '')
 			, query		= _parseQueryString(search)
-			, offset	= url.match(_rhttp)[0].length + 3 // (https?|file) + "://"
-			, path		= url.substr(url.indexOf('/', offset)).replace(/\?.*/, '')
+			, path		= url.replace(_rrclean, '')
 			, _this		= this
 		;
 
@@ -857,14 +872,19 @@
 		_this.search	= search;
 		_this.path		= path;
 		_this.pathname	= path;
-		_this.hash		= url.replace(/^[^#]+#/, '');
+		_this.hash		= url.replace(/^.*?#/, '');
 		_this.params	= {};
 		_this.referrer	= referrer;
+		_this.router	= router;
 	}
 	Request.fn = Request.prototype = {
 		constructor: Request,
+		getUrl: function (name, params){
+			var router = this.router;
+			return	router !== void 0 ? router.getUrl(name, params, this.params || this.query) : null;
+		},
 		clone: function (){
-			return	new Request(this.url, this.referrer);
+			return	new Request(this.url, this.referrer, this.router);
 		},
 		toString: function (){
 			return	this.url;
@@ -895,7 +915,12 @@
 		if( !Router.pushState ){
 			url = url.split(/#!?/).pop();
 		}
-		return	Router.parseURL(url).path;
+		return	Router.parseURL(url).url;
+	};
+
+
+	Router.loadTemplate = function (url/**String*/, route/**Pilot.Route*/){
+		throw "Router.loadTemplate("+url+", "+route+") -- should be implemented";
 	};
 	// Router;
 
@@ -904,14 +929,14 @@
 	/**
 	 * @class	Pilot.Route
 	 */
-	var Route = Emitter.extend({
+	var Route = MyEmitter.extend({
 		data: {},
 		boundAll: [],
 		paramsRules: {},
 		subroutes: null,
 
 		__lego: function (options){
-			Emitter.fn.__lego.call(this);
+			MyEmitter.fn.__lego.call(this);
 
 			_extend(this, options);
 
@@ -938,7 +963,7 @@
 					  init: 0 /* methodname => isEvent*/
 					, loadData: 0
 					, render: 0
-					, emit: 1
+					, trigger: 1
 				}, function (isEvent, method){
 					_profilerWrap(this, method, isEvent, 1);
 				}, this);
@@ -946,9 +971,9 @@
 
 			this.on('routestart route routechange routeend', this.bound(function (evt, req){
 				var type = evt.type.substr(5);
-				type = type ? 'route-' + type : 'route';
+				type = type ? 'route' + type.charAt(0).toUpperCase()+type.substr(1) : 'route';
 				_each(this.subroutes, function (view){
-					view.emit(type, req);
+					view.trigger(type, req);
 				});
 			}));
 
@@ -959,10 +984,10 @@
 
 		__init: function (){
 			this.inited = true;
-			this.emit('beforeInit');
+			this.trigger('beforeInit');
 			this.init();
 			this.subroutes && this.__initSub();
-			this.emit('init');
+			this.trigger('init');
 		},
 
 		__initSub: function (){
@@ -975,10 +1000,10 @@
 			throw '['+this.uniqId+'.'+method+']: '+text;
 		},
 
-
 		isActive: function (){
 			return	true;
 		},
+
 		bound: function (fn){
 			if( typeof fn === 'string' ){
 				if( this[fn] === undef ){
@@ -1018,6 +1043,11 @@
 				id = this.id;
 			}
 			return	this.router.getUrl(id, params, extra);
+		},
+
+		setTemplate: function (template/**Function*/){
+			this.template = template;
+			return	this;
 		},
 
 		setLoadedData: function (data){
@@ -1065,6 +1095,7 @@
 		className: '',
 		parentNode: null,
 		template: null,
+		templateUrl: null,
 		toggleEffect: 'toggle',
 
 		events: {},
@@ -1111,7 +1142,7 @@
 			}
 
 
-			this.on('routestart.view routeend.view', this.bound(function (evt, req){
+			this.on('routestart routeend', this.bound(function (evt, req){
 				this._toggleView(evt.type != 'routeend', req);
 			}));
 
@@ -1192,11 +1223,11 @@
 			var html = this.getHtml();
 
 			if( typeof html === 'string' ){
-				this.emit('before-render');
+				this.trigger('beforeRender');
 				this.$el.empty().each(function (){
 					this.innerHTML = html;
 				});
-				this.emit('render');
+				this.trigger('render');
 			}
 		}
 	});
@@ -1265,7 +1296,7 @@
 	function _parseQueryString(str){
 		var query = {};
 
-		if( typeof str == 'string' ){
+		if( typeof str === 'string' ){
 			var vars = str.split('&'), i = 0, n = vars.length, pair, name, val;
 			for( ; i < n; i++ ){
 				pair	= vars[i].split('=');
@@ -1467,7 +1498,7 @@
 	Router.Route	= Route;
 	Router.View		= View;
 	Router.Class	= klass;
-	Router.Emitter	= Emitter;
+	Router.Emitter	= MyEmitter;
 	Router.Request	= Request;
 
 
@@ -1550,7 +1581,7 @@
 			app.addRoute(
 				  route.id
 				, route.path + (route.dir ? '?*' : '')
-				, route.ctrl || View
+				, route.ctrl ? (route.ctrl.fn ? route.ctrl : View.extend(route.ctrl)) : View
 				, route.opts
 			);
 
@@ -1580,14 +1611,18 @@
 	};
 
 
-	// @export
-	Router.version	= '1.5.1';
+	// Export
+	Router.version	= '1.6.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){
-		define("Pilot", [], function (){ return Router; });
+		define(function (){ return Router; });
 	}
-	else if( window.ajs && ajs.loaded ){
+	else {
+		window["Pilot"] = Router;
+	}
+
+	if( window.ajs && ajs.loaded ){
 		ajs.loaded('{pilot}Pilot');
 	}
-})(typeof module !== 'undefined' && module.exports || window);
+})(window);
