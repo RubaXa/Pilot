@@ -40,6 +40,17 @@
 		'/gallery/:name/': {
 			id: 'gallery',
 
+			loadData: function (req) {
+				return $.flickr('flickr.photos.search', {
+					tags: req.params.name,
+					page: req.params.page|0,
+					extras: 'url_q',
+					per_page: 50
+				}).then(function (result) {
+					return result.photos;
+				});
+			},
+
 			/**
 			 * Is similar to `routestart` and `routechange`.
 			 * @param  {$.Event}  evt
@@ -47,6 +58,12 @@
 			 */
 			onRoute: function (evt, req) {
 				this.$('.title').text(req.params.name);
+
+				var photos = this.getLoadedData();
+
+				this.$('.photos').html(photos.photo.map(function (photo) {
+					return '<a href=""><img src="'+ photo.url_q +'" /></a>';
+				}, this));
 			}
 		}
 
