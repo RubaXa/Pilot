@@ -2,6 +2,26 @@
 	var App = Pilot.create({
 		el: '#app', // root view
 
+		subviews: {
+			/**
+			 * Show loading indicator on each query.
+			 */
+			loading: {
+				// Before request
+				loadData: function () {
+					this.$el.stop().delay(100).fadeIn('fast');
+				},
+
+				// After request
+				onRoute: function () {
+					this.$el.stop(true);
+					if (this.$el.is(':visible')) {
+						this.$el.delay(100).fadeOut('fast');
+					}
+				}
+			}
+		},
+
 
 		// Home screen
 		'/': {
