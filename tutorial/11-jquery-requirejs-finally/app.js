@@ -9,11 +9,11 @@
 			id: 'home',
 
 			/**
-			 * This method should be called before `init`, `routestart` or `routechange`
+			 * This method should be called once before `init`, `routestart` or `routechange`
 			 * @param   {Pilot.Request}  req
 			 * @returns {$.Deferred}
 			 */
-			loadData: function (req) {
+			loadDataOnce: function (req) {
 				return $.getJSON('./data/galleries.json');
 			},
 
@@ -33,6 +33,21 @@
 					return '<li class="table-view-cell"><a href="'+url+'">'+name+'</a></li>';
 				}, this));
 			}
+		},
+
+
+		// Gallery screen
+		'/gallery/:name/': {
+			id: 'gallery',
+
+			/**
+			 * Is similar to `routestart` and `routechange`.
+			 * @param  {$.Event}  evt
+			 * @param  {Pilot.Request}  req
+			 */
+			onRoute: function (evt, req) {
+				this.$('.title').text(req.params.name);
+			}
 		}
 
 
@@ -42,3 +57,4 @@
 	// Run app
 	App.start('/');
 })(jQuery, Pilot);
+
