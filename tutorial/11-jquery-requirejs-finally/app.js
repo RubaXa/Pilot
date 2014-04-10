@@ -77,13 +77,55 @@
 			 * @param  {Pilot.Request}  req
 			 */
 			onRoute: function (evt, req) {
-				this.$('.title').text(req.params.name);
+				var name = req.params.name,
+					photos = this.getLoadedData()
+				;
 
-				var photos = this.getLoadedData();
-
+				this.$('.title').text(name);
 				this.$('.photos').html(photos.photo.map(function (photo) {
-					return '<a href=""><img src="'+ photo.url_q +'" /></a>';
+					var url = this.getUrl('artwork', { name: name, id: photo.id });
+					return '<a href="' + url + '"><img src="' + photo.url_q + '" /></a>';
 				}, this));
+			}
+		},
+
+
+		// Artwork screen
+		'/artwork/:name/:id/': {
+			id: 'artwork',
+
+			loadData: function (req) {
+				return $.flickr('flickr.photos.getInfo', { photo_id: req.params.id }).then(function (res) {
+					var dfd = $.Deferred(),
+						photo = res.photo,
+						srcTpl = '//farm{farm}.static.flickr.com/{server}/{id}_{secret}_b.jpg'
+					;
+
+					// Preload image
+					$(new Image)
+						.attr('src', srcTpl.replace(/\{(.*?)\}/g, function (_, key) {
+							return photo[key];
+						}))
+						.one('load', function () {
+							dfd.resolve({
+								el: this,
+								photo: photo
+							});
+						})
+					;
+
+					return dfd;
+				});
+			},
+
+			onRoute: function (evt, req) {
+				var data = this.getLoadedData(),
+					owner = data.photo.owner
+				;
+
+				this.$('.js-back').prop('href', req.referrer);
+				this.$('.js-title').text(owner.realname || owner.username);
+				this.$('.js-content').html(data.el);
 			}
 		}
 

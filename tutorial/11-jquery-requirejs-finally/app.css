@@ -17,6 +17,14 @@
 	}
 
 
+/* Artwork screen */
+.photo {
+}
+	.photo img {
+		width: 100%;
+	}
+
+
 /* Loading */
 .loading {
 	top: 45%;
