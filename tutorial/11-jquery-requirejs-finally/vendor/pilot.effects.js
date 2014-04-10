@@ -1,4 +1,4 @@
-Pilot.View.toggleEffect('transition', function ($el, state) {
+Pilot.View.toggleEffect('transition', function ($el, state){
 	var transition = 'all .2s ease-in-out',
 		transformForm = 'translate3d(' + (!state ? '0' : '100%') + ',0,0)',
 		transformTo = 'translate3d(' + (state ? '0' : '100%') + ',0,0)'
