@@ -27,6 +27,7 @@
 		'/': {
 			// Route id
 			id: 'home',
+			toggleEffect: 'fadeIn',
 
 			/**
 			 * This method should be called once before `init`, `routestart` or `routechange`
@@ -59,6 +60,7 @@
 		// Gallery screen
 		'/gallery/:name/': {
 			id: 'gallery',
+			toggleEffect: 'transition',
 
 			loadData: function (req) {
 				return $.flickr('flickr.photos.search', {
@@ -93,6 +95,7 @@
 		// Artwork screen
 		'/artwork/:name/:id/': {
 			id: 'artwork',
+			toggleEffect: 'transition',
 
 			loadData: function (req) {
 				return $.flickr('flickr.photos.getInfo', { photo_id: req.params.id }).then(function (res) {
