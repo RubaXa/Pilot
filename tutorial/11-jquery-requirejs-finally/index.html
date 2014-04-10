@@ -41,36 +41,40 @@
 		</div>
 		<!-- /Home -->
 
-		<!-- Gallery -->
-		<div data-view-id="gallery" style="z-index: 2; display: none;">
-			<header class="bar bar-nav">
-				<a href="#!/" class="btn btn-link btn-nav pull-left">
-					<span class="icon icon-left-nav"></span>
-					Home
-				</a>
-				<h1 class="js-title title"></h1>
-			</header>
+		<!-- GalleryGroup -->
+		<div data-view-id="gallery-group" style="z-index: 2; display: none;">
+			<!-- Gallery -->
+			<div data-view-id="gallery" style="z-index: 2; display: none;">
+				<header class="bar bar-nav">
+					<a href="#!/" class="btn btn-link btn-nav pull-left">
+						<span class="icon icon-left-nav"></span>
+						Home
+					</a>
+					<h1 class="js-title title"></h1>
+				</header>
 
-			<div class="js-content content">
-				<div class="js-photos photos"></div>
-				<div class="js-paginator paginator"></div>
+				<div class="js-content content">
+					<div class="js-photos photos"></div>
+					<div class="js-paginator paginator"></div>
+				</div>
 			</div>
-		</div>
-		<!-- /Gallery -->
+			<!-- /Gallery -->
 
-		<!-- Artwork -->
-		<div data-view-id="artwork" style="z-index: 3; display: none;">
-			<header class="bar bar-nav">
-				<a class="js-back btn btn-link btn-nav pull-left">
-					<span class="icon icon-left-nav"></span>
-					<span>Back</span>
-				</a>
-				<h1 class="js-title title"></h1>
-			</header>
+			<!-- Artwork -->
+			<div data-view-id="artwork" style="z-index: 3; display: none;">
+				<header class="bar bar-nav">
+					<a class="js-back btn btn-link btn-nav pull-left">
+						<span class="icon icon-left-nav"></span>
+						<span>Back</span>
+					</a>
+					<h1 class="js-title title"></h1>
+				</header>
 
-			<div class="js-content content photo"></div>
+				<div class="js-content content"></div>
+			</div>
+			<!-- /Artwork -->
 		</div>
-		<!-- /Artwork -->
+		<!-- /GalleryGroup -->
 
 	</div>
 

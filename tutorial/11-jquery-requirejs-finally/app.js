@@ -57,78 +57,110 @@
 		},
 
 
-		// Gallery screen
-		'/gallery/:name/': {
-			id: 'gallery',
+		// Gallery & Artwork group
+		'/gallery/': {
+			id: 'gallery-group',
 			toggleEffect: 'transition',
 
-			loadData: function (req) {
-				return $.flickr('flickr.photos.search', {
-					tags: req.params.name,
-					page: req.params.page|0,
-					extras: 'url_q',
-					per_page: 50
-				}).then(function (result) {
-					return result.photos;
-				});
-			},
 
-			/**
-			 * Is similar to `routestart` and `routechange`.
-			 * @param  {$.Event}  evt
-			 * @param  {Pilot.Request}  req
-			 */
-			onRoute: function (evt, req) {
-				var name = req.params.name,
-					photos = this.getLoadedData()
-				;
+			// Gallery screen
+			'/:name/:page?': {
+				id: 'gallery',
+				toggleEffect: 'show',
 
-				this.$('.title').text(name);
-				this.$('.photos').html(photos.photo.map(function (photo) {
-					var url = this.getUrl('artwork', { name: name, id: photo.id });
-					return '<a href="' + url + '"><img src="' + photo.url_q + '" /></a>';
-				}, this));
-			}
-		},
+				paramsRules: {
+					name: function (val) {
+						return val != 'artwork';
+					}
+				},
 
+				loadData: function (req) {
+					return $.flickr('flickr.photos.search', {
+						tags: req.params.name,
+						page: req.params.page|0,
+						extras: 'url_q',
+						per_page: 50
+					}).then(function (result) {
+						return result.photos;
+					});
+				},
 
-		// Artwork screen
-		'/artwork/:name/:id/': {
-			id: 'artwork',
-			toggleEffect: 'transition',
-
-			loadData: function (req) {
-				return $.flickr('flickr.photos.getInfo', { photo_id: req.params.id }).then(function (res) {
-					var dfd = $.Deferred(),
-						photo = res.photo,
-						srcTpl = '//farm{farm}.static.flickr.com/{server}/{id}_{secret}_b.jpg'
+				/**
+				 * Is similar to `routestart` and `routechange`.
+				 * @param  {$.Event}  evt
+				 * @param  {Pilot.Request}  req
+				 */
+				onRoute: function (evt, req) {
+					var name = req.params.name,
+						photos = this.getLoadedData()
 					;
 
-					// Preload image
-					$(new Image)
-						.attr('src', srcTpl.replace(/\{(.*?)\}/g, function (_, key) {
-							return photo[key];
-						}))
-						.one('load', function () {
-							dfd.resolve({
-								el: this,
-								photo: photo
-							});
-						})
+					this.$('.js-title').text(name);
+					this.$('.js-content').scrollTop(0);
+
+					this.$('.js-photos').html(photos.photo.map(function (photo) {
+						var url = this.getUrl('artwork', { id: photo.id });
+						return '<a href="' + url + '"><img src="' + photo.url_q + '" /></a>';
+					}, this));
+
+					var paginator = [],
+						page = Math.max(photos.page - 4, 1),
+						pages = Math.min(page + 10, photos.pages),
+						url
 					;
 
-					return dfd;
-				});
+					for (; page < pages; page++) {
+						if (page == photos.page) {
+							paginator.push('<span class="badge badge-positive">' + page + '</span>');
+						} else {
+							url = this.getUrl('gallery', { name: name, page: page });
+							paginator.push('<a href="!#' + url + '" class="badge">' + page + '</a>');
+						}
+					}
+
+					this.$('.js-paginator').html(paginator.join(' '));
+				}
 			},
 
-			onRoute: function (evt, req) {
-				var data = this.getLoadedData(),
-					owner = data.photo.owner
-				;
 
-				this.$('.js-back').prop('href', req.referrer);
-				this.$('.js-title').text(owner.realname || owner.username);
-				this.$('.js-content').html(data.el);
+			// Artwork screen
+			'/artwork/:id/': {
+				id: 'artwork',
+				toggleEffect: 'transition',
+
+				loadData: function (req) {
+					return $.flickr('flickr.photos.getInfo', { photo_id: req.params.id }).then(function (res) {
+						var dfd = $.Deferred(),
+							photo = res.photo,
+							srcTpl = '//farm{farm}.static.flickr.com/{server}/{id}_{secret}_b.jpg'
+						;
+
+						// Preload image
+						$(new Image)
+							.attr('src', srcTpl.replace(/\{(.*?)\}/g, function (_, key) {
+								return photo[key];
+							}))
+							.one('load', function () {
+								dfd.resolve({
+									el: this,
+									photo: photo
+								});
+							})
+						;
+
+						return dfd;
+					});
+				},
+
+				onRoute: function (evt, req) {
+					var data = this.getLoadedData(),
+						owner = data.photo.owner
+					;
+
+					this.$('.js-back').prop('href', req.referrer);
+					this.$('.js-title').text(owner.realname || owner.username);
+					this.$('.js-content').html(data.el);
+				}
 			}
 		}
 
@@ -139,4 +171,3 @@
 	// Run app
 	App.start('/');
 })(jQuery, Pilot);
-
