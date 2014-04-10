@@ -2,6 +2,7 @@
 <html>
 <head>
 	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script src="../vendors/performance.js"></script>
 
 	<script>
 		var rnd = Math.random();
@@ -9,14 +10,14 @@
 
 		if (bench == 'native') {
 			document.write('<script src="../vendors/Emitter.js?' + rnd + '"><'+'/script>');
-			document.write('<script src="../vendors/Deferred.js?' + rnd + '"><'+'/script>');
+			document.write('<script src="../vendors/Promise.js?' + rnd + '"><'+'/script>');
 		}
 	</script>
 
 	<script src="../Pilot.js"></script>
 	<script>
 		(function () {
-			var ts = new Date;
+			var ts = performance.now();
 			var app = Pilot.create({ production: true }, {
 				'/:foo': function (){ },
 				'/:bar': function (){ },
@@ -28,7 +29,7 @@
 				app.nav('/foo'+i);
 			}
 
-			parent['__bench' + bench](new Date - ts);
+			parent['__bench' + bench](performance.now() - ts);
 		})()
 	</script>
 </head>
