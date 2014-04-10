@@ -109,7 +109,15 @@
 			Ext.prototype = new noop;
 
 			_extend(Ext, this);
-			_extend(Ext.fn = Ext.prototype, methods);
+
+			_each(methods, function (fn, name) {
+				if (typeof fn === 'function') {
+					// Export parent method
+					fn.parent = Ext.prototype[name];
+				}
+				Ext.prototype[name] = fn;
+			});
+			Ext.fn = Ext.prototype;
 
 			Ext.fn.__fn = Ext.fn.__super__ = this.fn;
 			Ext.fn.__self = Ext.fn.__self__ = New.fn.constructor = Ext;
@@ -125,15 +133,30 @@
 	 * @class	MyEmitter
 	 */
 	var MyEmitter = klass(window.Emitter && Emitter.fn || {
-		__lego: function (){
-			var $emitter = $(this);
+		__withoutEvents__: false,
 
-			_each({ on: 'bind', off: 'unbind', fire: 'triggerHandler' }, function (exportName, originalMethod){
-				this[originalMethod] = function (){
-					$emitter[exportName].apply($emitter, arguments);
-					return	this;
-				};
-			}, this);
+		__lego: function (){
+			if (this.__withoutEvents__) {
+				this.trigger = noop;
+			}
+			else {
+				var $emitter = $(this);
+
+				_each({ on: 'bind', off: 'unbind', fire: 'triggerHandler' }, function (exportName, originalMethod){
+					this[originalMethod] = function (){
+						$emitter[exportName].apply($emitter, arguments);
+						return	this;
+					};
+				}, this);
+			}
+		},
+
+		on: function () {
+			return this;
+		},
+
+		off: function () {
+			return this;
 		},
 
 		trigger: function (name, args){
@@ -166,9 +189,9 @@
 		 * @constructor
 		 * @param	{Object}	options
 		 */
-		__lego: function (options){
+		__lego: function __(options){
 			// call the parent method
-			MyEmitter.fn.__lego.call(this);
+			__.parent.call(this);
 
 			this.options	= options = _extend({
 				  el: null
@@ -701,6 +724,7 @@
 							.replace(/\(.*?:[^)]+\)+\??/g, '')
 							.replace(/\(|\)\??/g, '')
 							.replace(/\/+/g, '/')
+							.replace(/[+*]$/g, '')
 						;
 			}
 
@@ -935,8 +959,8 @@
 		paramsRules: {},
 		subroutes: null,
 
-		__lego: function (options){
-			MyEmitter.fn.__lego.call(this);
+		__lego: function __(options){
+			__.parent.call(this);
 
 			_extend(this, options);
 
@@ -1100,12 +1124,13 @@
 
 		events: {},
 
-		__init: function (){
+		__init: function __() {
+			var el = this.el;
 			this.inited	= true;
 			this.__init	= noop;
 
-			if( this.el ){
-				this.setElement($(this.el, this.parentNode));
+			if( el ){
+				this.setElement(el.jquery ? el : $(el, this.parentNode));
 			}
 			else if( this.tagName || this.tag ){
 				var tag = this.tagName, parentNode = this.parentNode, className = this.className;
@@ -1148,7 +1173,8 @@
 
 
 			// Call the parent method
-			Route.fn.__init.call(this);
+			__.parent.call(this);
+
 
 			// Init subroutes
 			_each(this.subroutes, function (view){
@@ -1165,13 +1191,13 @@
 
 
 		setElement: function (el){
-			this.undelegateEvents();
-
 			if( el ){
-				this.$el = $(el);
+				this.$el = el.jquery ? el : $(el);
 				this.delegateEvents();
 			}
 			else {
+				this.undelegateEvents();
+
 				this.$el[0] = undef;
 				this.$el.length = 0;
 			}
