@@ -11,6 +11,7 @@ $.flickr = (function ($) {
 	return function (method, data) {
 		return $.ajax({
 			url: '//api.flickr.com/services/rest/?jsonFlickrApi=?',
+			cache: $.ajaxCache('flickr'),
 			timeout: 10000,
 			data: $.extend({
 				api_key: API_KEY,
