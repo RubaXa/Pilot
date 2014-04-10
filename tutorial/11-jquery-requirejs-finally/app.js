@@ -1,9 +1,12 @@
-(function ($, Pilot) {
+define(function (require) {
+	var Pilot = require('Pilot');
+
+
 	var App = Pilot.create({
 		el: '#app', // root view
 
 		subviews: {
-			loading: LoadingView
+			loading: require('view/LoadingView')
 		},
 
 
@@ -11,7 +14,7 @@
 		'/': {
 			// Route id
 			id: 'home',
-			ctrl: HomeView,
+			ctrl: require('view/HomeView'),
 			toggleEffect: 'fadeIn'
 		},
 
@@ -25,7 +28,7 @@
 			// Gallery screen
 			'/:name/:page?': {
 				id: 'gallery',
-				ctrl: GalleryView,
+				ctrl: require('view/GalleryView'),
 				toggleEffect: 'show'
 			},
 
@@ -33,7 +36,7 @@
 			// Artwork screen
 			'/artwork/:id/': {
 				id: 'artwork',
-				ctrl: ArtworkView,
+				ctrl: require('view/ArtworkView'),
 				toggleEffect: 'transition'
 			}
 		}
@@ -42,6 +45,6 @@
 	});
 
 
-	// Run app
-	App.start('/');
-})(jQuery, Pilot);
+	// Export
+	return App;
+});

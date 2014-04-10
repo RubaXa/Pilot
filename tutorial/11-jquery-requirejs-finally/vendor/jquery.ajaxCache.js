@@ -1,5 +1,5 @@
 /*! $.ajaxCache | RubaXa <trash@rubaxa.org> | MIT */
-(function ($) {
+define(['jquery'], function ($) {
 	var _cache = {};
 
 	/**
@@ -59,4 +59,4 @@
 			}
 		};
 	});
-})(jQuery);
+});

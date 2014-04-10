@@ -1,6 +1,5 @@
-$.flickr = (function ($) {
+define(['jquery', 'vendor/jquery.ajaxCache'], function ($) {
 	var API_KEY = '17b8e2ab0fd555ec614c32896a017a91';
-
 
 	/**
 	 * Call flickr api
@@ -8,7 +7,7 @@ $.flickr = (function ($) {
 	 * @param {Object} data
 	 * @returns {$.Deferred}
 	 */
-	return function (method, data) {
+	$.flickr = function (method, data) {
 		return $.ajax({
 			url: '//api.flickr.com/services/rest/?jsonFlickrApi=?',
 			cache: $.ajaxCache('flickr'),
@@ -22,6 +21,6 @@ $.flickr = (function ($) {
 			jsonpCallback: 'jsonFlickrApi'
 		});
 	};
-})(jQuery);
+});
 
 
