@@ -1,0 +1,17 @@
+/* Default screen */
+[data-view-id] {
+	width: 100%;
+	height: 100%;
+	position: fixed;
+}
+
+
+/* Gallery screen */
+.photos {
+	line-height: 0
+}
+	.photos img {
+		width: 70px;
+		height: 70px;
+		margin: 5px 0 0 5px;
+	}

@@ -868,6 +868,16 @@ Set a new location.
 <a name="changelog"></a>
 ## Changelog
 
+### 1.5.0
+<ul>
+	<li>+ Pilot.create</li>
+	<li>+ `Pilot.View.fn.toggleEffect: "toggle"` and `Pilot.View.toggleEffect(name, fn)`</li>
+	<li>+ `Pilot.Route.fn.loadDataOnce(req)`, `Pilot.Route.fn.setLoadedData(data)` and `Pilot.Route.fn.getLoadedData()`</li>
+	<li>+ `Pilot.Route.fn.setRouteError()`</li>
+	<li>+ `tap` event</li>
+</ul>
+
+
 ### 1.4.0
 <ul>
 	<li>+ `profile` option</li>

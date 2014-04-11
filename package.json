@@ -1,11 +1,11 @@
 {
 	"name": "pilotjs",
-	"version": "1.4.0",
+	"version": "1.5.0",
 	"devDependencies": {
 		"grunt": "~0.4.0",
 		"grunt-version": "*",
 		"grunt-contrib-jshint": "~0.2.0",
-		"grunt-contrib-qunit": "~0.2.0",
+		"grunt-contrib-qunit": "*",
 		"grunt-contrib-uglify": "*"
 	},
 	"description": "Multifunction JavaScript router.",
