@@ -35,7 +35,7 @@ define(['Pilot', 'vendor/jquery.flickr', 'vendor/pilot.effects'], function (Pilo
 		 * @param {String} [val]
 		 */
 		setHtml: function (type, val) {
-			if (!val) {
+			if (val === void 0) {
 				val = type;
 				type = 'content'; // default type
 			}
