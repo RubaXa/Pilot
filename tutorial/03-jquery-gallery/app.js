@@ -46,7 +46,7 @@
 			 * @param  {Pilot.Request}  req
 			 */
 			onRoute: function (evt, req) {
-				this.$('.title').text(req.params.name);
+				this.$('.js-title').text(req.params.name);
 			}
 		}
 

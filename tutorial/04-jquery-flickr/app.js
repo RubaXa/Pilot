@@ -57,11 +57,11 @@
 			 * @param  {Pilot.Request}  req
 			 */
 			onRoute: function (evt, req) {
-				this.$('.title').text(req.params.name);
+				this.$('.js-title').text(req.params.name);
 
 				var photos = this.getLoadedData();
 
-				this.$('.photos').html(photos.photo.map(function (photo) {
+				this.$('.js-photos').html(photos.photo.map(function (photo) {
 					return '<a><img src="'+ photo.url_q +'" /></a>';
 				}, this));
 			}

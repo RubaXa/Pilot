@@ -81,8 +81,8 @@
 					photos = this.getLoadedData()
 				;
 
-				this.$('.title').text(name);
-				this.$('.photos').html(photos.photo.map(function (photo) {
+				this.$('.js-title').text(name);
+				this.$('.js-photos').html(photos.photo.map(function (photo) {
 					var url = this.getUrl('artwork', { name: name, id: photo.id });
 					return '<a href="' + url + '"><img src="' + photo.url_q + '" /></a>';
 				}, this));
