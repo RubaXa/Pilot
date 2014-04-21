@@ -1,3 +1,21 @@
+# Pilot
+Multifunctional JavaScript router solves the problem of routing your application,
+providing full control over the route. It can work either by itself or as a part
+of other framework, such as Backbone, in which it could be an excellent substitute
+for the standard `Backbone.Router` and even `Backbone.View`. Just try it.
+
+
+---
+
+
+## Get started
+
+ * [Pilot + jQuery + FlickrAPI tutorial](./tutorial/) (step by step)
+
+
+---
+
+
 <a name="install" data-name="Installation"></a>
 ## Installation, testing, assembling
 `npm install pilotjs`<br/>
@@ -6,14 +24,6 @@
 `grunt`
 
 
----
-
-
-## Pilot
-Multifunctional JavaScript router solves the problem of routing your application,
-providing full control over the route. It can work either by itself or as a part
-of other framework, such as Backbone, in which it could be an excellent substitute
-for the standard `Backbone.Router` and even `Backbone.View`. Just try it.
 
 ---
 
