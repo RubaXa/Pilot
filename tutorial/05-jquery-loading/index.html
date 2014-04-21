@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+
+	<title>Pilot + jQuery</title>
+
+	<meta name="keywords" content=""/>
+	<meta name="description" content=""/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+	<!-- ratchet:css -->
+	<link rel="stylesheet" href="../ratchet/css/ratchet.min.css"/>
+	<link rel="stylesheet" href="../ratchet/css/ratchet-theme-ios.min.css"/>
+
+	<!-- app:css -->
+	<link rel="stylesheet" href="./app.css" />
+</head>
+<body style="position: relative; top: auto; bottom: auto;">
+
+	<div id="app">
+
+		<!-- Loading -->
+		<div data-subview-id="loading" class="loading">
+			<span class="loading__ball loading__ball_left"></span>
+			<span class="loading__ball loading__ball_right"></span>
+		</div>
+		<!-- /Loading -->
+
+		<!-- Home -->
+		<div data-view-id="home" style="z-index: 1; display: none;">
+			<header class="bar bar-nav">
+				<h1 class="js-title title"></h1>
+			</header>
+
+			<div class="js-content content">
+				<ul class="js-list table-view"></ul>
+			</div>
+		</div>
+		<!-- /Home -->
+
+		<!-- Gallery -->
+		<div data-view-id="gallery" style="z-index: 2; display: none;">
+			<header class="bar bar-nav">
+				<a href="#!/" class="btn btn-link btn-nav pull-left">
+					<span class="icon icon-left-nav"></span>
+					Home
+				</a>
+				<h1 class="js-title title"></h1>
+			</header>
+
+			<div class="js-content content">
+				<div class="js-photos photos"></div>
+				<div class="js-paginator paginator"></div>
+			</div>
+		</div>
+		<!-- /Gallery -->
+
+	</div>
+
+
+	<!-- vendors: -->
+	<script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+	<script src="../../Pilot.js"></script>
+	<script src="./vendor/jquery.flickr.js"></script>
+
+	<!-- app:code -->
+	<script src="app.js"></script>
+</body>
+</html>
