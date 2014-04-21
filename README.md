@@ -5,15 +5,13 @@ of other framework, such as Backbone, in which it could be an excellent substitu
 for the standard `Backbone.Router` and even `Backbone.View`. Just try it.
 
 
----
 
 
 ## Get started
 
- * [Pilot + jQuery + FlickrAPI tutorial](./tutorial/) (step by step)
+ * [Gallery](./tutorial/): jQuery + FlickrAPI (step by step)
 
 
----
 
 
 <a name="install" data-name="Installation"></a>
