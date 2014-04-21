@@ -1217,6 +1217,30 @@
 	};
 
 
+	// Preset: fade
+	View.toggleEffect('fade', function ($el, state){
+		$el[state ? 'fadeIn' : 'fadeOut']();
+	});
+
+
+	// Preset: fadeIn
+	View.toggleEffect('fadeIn', function ($el){
+		View.toggleEffect.fade($el, true);
+	});
+
+
+	// Preset: fadeOut
+	View.toggleEffect('fadeOut', function ($el){
+		View.toggleEffect.fade($el, false);
+	});
+
+
+	// Preset: show
+	View.toggleEffect('show', function ($el, state){
+		state && View.toggleEffect.toggle($el, true);
+	});
+
+
 	// Preset: toggle
 	View.toggleEffect('toggle', function ($el, state){
 		$el.css('display', state ? '' : 'none');
