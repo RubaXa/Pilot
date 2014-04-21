@@ -837,6 +837,17 @@ Route parameters: `{ tag: "cubism", perPage: 20, page: 123 }`
 ### referrer`:String`
 Contains url of previous request: `http://domain.com/gallery/cubism/20/page/12`
 
+### is(id`:String`)`:Boolean`
+Check the current route
+
+* id — id routes, separated by a space
+
+### getUrl(id`:String`[, params`:Object`])`:Boolean`
+Check the current route
+
+* id — route id
+* params — route parameters
+
 ### clone()`:Pilot.Request`
 Clone method.
 
@@ -882,6 +893,8 @@ Set a new location.
 	<li>+ Support for alternative: `Deferred` & `Emitter`</li>
 	<li>+ `Pilot.Route.fn.setTemplate(fn)`</li>
 	<li>* Request: micro bug fixes</li>
+	<li>+ Request.fn.is</li>
+	<li>* JSDoc</li>
 </ul>
 
 

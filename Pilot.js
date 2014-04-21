@@ -50,6 +50,7 @@
 		, document	= window.document
 		, location	= window.location
 
+		, _rspace	= /\s+/
 		, _rhttp	= /^(?:https?|file)/i
 		, _rrclean	= /(?:^(?:https?|file):\/\/[^/]*|[?#].*)/g
 
@@ -130,7 +131,8 @@
 
 
 	/**
-	 * @class	MyEmitter
+	 * @class    MyEmitter
+	 * @extends  Emitter
 	 */
 	var MyEmitter = klass(window.Emitter && Emitter.fn || {
 		__withoutEvents__: false,
@@ -181,9 +183,10 @@
 
 
 	/**
-	 * @class	Pilot
+	 * @class    Pilot
+	 * @exports  Emitter
 	 */
-	var Router = MyEmitter.extend({
+	var Router = MyEmitter.extend(/** @lends Pilot.prototype */{
 
 		/**
 		 * @constructor
@@ -850,11 +853,11 @@
 
 
 	/**
-	 * @class	Pilot.Request
-	 * @constructor
-	 * @param {String} url
-	 * @param {String} [referrer]
-	 * @param  {Pilot} [router]
+	 * @class   Pilot.Request
+	 * @param   {String} url
+	 * @param   {String} [referrer]
+	 * @param   {Pilot} [router]
+	 * @returns {Pilot.Request}
 	 */
 	function Request(url, referrer, router){
 		if( !_rhttp.test(url) ){
@@ -901,15 +904,58 @@
 		_this.referrer	= referrer;
 		_this.router	= router;
 	}
-	Request.fn = Request.prototype = {
+	Request.fn = Request.prototype = /** @lends Pilot.Request.prototype */ {
 		constructor: Request,
-		getUrl: function (name, params){
-			var router = this.router;
-			return	router !== void 0 ? router.getUrl(name, params, this.params || this.query) : null;
+
+		/**
+		 * Check the current route
+		 * @param   {String}  ids  id routes, separated by a space
+		 * @returns {Boolean}
+		 */
+		is: function (ids) {
+			ids = ids.split(_rspace);
+
+			var units = this.router ? this.router.activeUnits : [],
+				n = units.length,
+				i = ids.length,
+				r
+			;
+
+			while (i--) {
+				r = n;
+				while (r--) {
+					if (units[r].id === ids[i]) {
+						return true;
+					}
+				}
+			}
+
+			return false;
 		},
+
+		/**
+		 * Get url by route id
+		 * @param   {String} id   route id
+		 * @param   {Object} [params]
+		 * @returns {String}
+		 */
+		getUrl: function (id, params){
+			var router = this.router;
+			return	router !== void 0 ? router.getUrl(id, params, this.params || this.query) : null;
+		},
+
+		/**
+		 * Clone current request
+		 * @returns {Pilot.Request}
+		 */
 		clone: function (){
 			return	new Request(this.url, this.referrer, this.router);
 		},
+
+		/**
+		 * To absolute url
+		 * @returns {String}
+		 */
 		toString: function (){
 			return	this.url;
 		}
@@ -951,9 +997,10 @@
 
 
 	/**
-	 * @class	Pilot.Route
+	 * @class    Pilot.Route
+	 * @extends  Emitter
 	 */
-	var Route = MyEmitter.extend({
+	var Route = MyEmitter.extend(/** @lends Pilot.Route.prototype */{
 		data: {},
 		boundAll: [],
 		paramsRules: {},
@@ -1108,9 +1155,10 @@
 
 
 	/**
-	 * @class	Pilot.View
+	 * @class    Pilot.View
+	 * @extends  Pilot.Route
 	 */
-	var View = Route.extend({
+	var View = Route.extend(/** @lends Pilot.View.prototype */{
 		el: null,
 		$el: $(),
 

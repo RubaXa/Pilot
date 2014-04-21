@@ -719,4 +719,81 @@
 			'->sub.content.load:/2/->sub.content.route:/2/->sub.content.routechange:/2/' +
 			'->sub.content.routeend:/exit/exit/');
 	});
+
+
+	test('req.is', function () {
+		var log = [];
+		var Router = Pilot.create({
+			'/': {
+				'/': {
+					id: 'idx',
+					onRoute: function (evt, req) {
+						log.push(this.id + ':' + req.path + '['+req.is('idx')+']');
+					}
+				},
+
+				'/catalog/': {
+					id: 'catalog',
+					onRoute: function (evt, req) {
+						log.push(this.id + ':' + req.path + '[' + [
+							req.is('idx'),
+							req.is('catalog')
+						].join(',') + ']');
+					},
+
+					'/:category/': {
+						id: 'category',
+						paramsRules: {
+							category: function (val){
+								return !/^\d+$/.test(val);
+							}
+						},
+						onRoute: function (evt, req) {
+							log.push(this.id + ':' + req.path + '[' + [
+								req.is('idx'),
+								req.is('catalog'),
+								req.is('category')
+							].join(',') + ']');
+						}
+					},
+
+					'/:id/': {
+						id: 'product',
+						paramsRules: {
+							id: function (val){
+								return /^\d+$/.test(val);
+							}
+						},
+						onRoute: function (evt, req) {
+							log.push(this.id + ':' + req.path + '[' + [req.is('idx category product')].join(',') + ']');
+						}
+					}
+				},
+
+				'/help/': {
+					id: 'help',
+					onRoute: function (evt, req) {
+						log.push(this.id + ':' + req.path + '[' + [req.is('help')].join(',') + ']');
+					}
+				}
+			}
+		});
+
+
+		Router.nav('/');
+		Router.nav('/catalog/');
+		Router.nav('/catalog/mushrooms/');
+		Router.nav('/catalog/12345/');
+		Router.nav('/help/');
+
+		equal(log.join('\n'), [
+			'idx:/[true]',
+			'catalog:/catalog/[false,true]',
+			'catalog:/catalog/mushrooms/[false,true]',
+			'category:/catalog/mushrooms/[false,true,true]',
+			'catalog:/catalog/12345/[false,true]',
+			'product:/catalog/12345/[true]',
+			'help:/help/[true]'
+		].join('\n'));
+	});
 })(jQuery);
