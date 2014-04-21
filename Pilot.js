@@ -42,7 +42,7 @@
 		, noop		= function (){}
 		, undef		= void 0
 
-		, $			= window.jQuery || window.Zepto || window.ender || window.$ || noop
+		, $			= window.jQuery || window.Zepto || window.ender || window.$ || function (el) { return el; }
 		, Deferred	= window.Deferred || $.Deferred
 		, Event		= window.Emitter && Emitter.Event || $.Event
 
@@ -1005,6 +1005,7 @@
 		boundAll: [],
 		paramsRules: {},
 		subroutes: null,
+		parentRouteId: null,
 
 		__lego: function __(options){
 			__.parent.call(this);
@@ -1147,6 +1148,10 @@
 			return	  (this.parentRoute ? this.parentRoute.getRouteName()+'.' : '')
 					+ (this.id || this.subrouteName  || this.uniqId)
 			;
+		},
+
+		getParentRoute: function (){
+			return	this.router.get(this.parentRouteId);
 		}
 
 	});
@@ -1173,15 +1178,28 @@
 		events: {},
 
 		__init: function __() {
-			var el = this.el;
+			var el = this.el,
+				parentNode = this.parentNode
+			;
+
 			this.inited	= true;
 			this.__init	= noop;
 
 			if( el ){
-				this.setElement(el.jquery ? el : $(el, this.parentNode));
+				if (typeof el === 'string') {
+					if (!parentNode) {
+						parentNode = this.getParentRouteNode();
+					}
+					el = $(el, parentNode);
+				}
+				else if (el.nodeType) {
+					el = $(el);
+				}
+
+				this.setElement(el);
 			}
 			else if( this.tagName || this.tag ){
-				var tag = this.tagName, parentNode = this.parentNode, className = this.className;
+				var tag = this.tagName, className = this.className;
 
 				if( this.tag ){
 					tag = this.tag.match(/^(#[^\s]+)?\s*([^\.]+)\.?([^$]+)?/);
@@ -1208,7 +1226,7 @@
 					}
 				}
 			}
-			else {
+			else if( this.$el ){
 				// if use jQuery < 1.4: $() === $(document)
 				this.$el[0] = undef;
 				this.$el.length = 0;
@@ -1238,6 +1256,20 @@
 		},
 
 
+		getParentRouteNode: function () {
+			var el, route = this;
+
+			while (route = route.getParentRoute()) {
+				el = route.el;
+				if (el && el.nodeType) {
+					return el;
+				}
+			}
+
+			return null;
+		},
+
+
 		setElement: function (el){
 			if( el ){
 				this.$el = el.jquery ? el : $(el);
@@ -1257,16 +1289,21 @@
 
 		delegateEvents: function (events){
 			this.undelegateEvents();
+
 			_each(events || this.events, function (fn, expr){
 				expr = expr.match(/^([^\s]+)\s+(.+)/);
 				this.$el.delegate(expr[2], expr[1] +'.delegateEvents'+ this.cid, this.bound(fn));
 			}, this);
+
 			return	this;
 		},
 
 
 		undelegateEvents: function (){
-			this.$el && this.$el.unbind('.delegateEvents' + this.cid);
+			if( this.$el && this.$el.unbind ){
+				this.$el.unbind('.delegateEvents' + this.cid);
+			}
+
 			return	this;
 		},
 
@@ -1627,10 +1664,14 @@
 			;
 
 			// Default view
-			route.opts.el = '[data-view-id="'+ route.id +'"]';
+			route.opts.el = sitemap.id ? '[data-view-id="'+ route.id +'"]' : null;
 
-			if( parent && parent.paramsRules ){
-				route.paramsRules = _extend({}, parent.paramsRules, route.paramsRules);
+			if( parent ){
+				route.opts.parentRouteId = parent.id;
+
+				if( parent.paramsRules ){
+					route.paramsRules = _extend({}, parent.paramsRules, route.paramsRules);
+				}
 			}
 
 			if( 'function' === typeof sitemap ){
@@ -1666,7 +1707,7 @@
 
 
 		// App view
-		options.el = routes[0].opts.el;
+		options.el = routes[0].opts.el || options.el;
 
 
 		// Build application

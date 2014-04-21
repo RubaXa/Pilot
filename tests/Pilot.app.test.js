@@ -99,6 +99,7 @@ test('access + referrer', function (){
 
 
 test('app', function (){
+	var secretEl;
 	var app = Pilot.create({
 		el: '#app',
 
@@ -124,6 +125,16 @@ test('app', function (){
 			},
 
 			'404': { id: 'help-404' }
+		},
+
+		'/about/': {
+			id: 'about',
+
+			'/secret/': {
+				onRoute: function () {
+					secretEl = this.el;
+				}
+			}
 		}
 	});
 
@@ -152,6 +163,9 @@ test('app', function (){
 	app.nav('/help/baz/');
 	ok(!$('[data-view-id="help-details"]').is(':visible'), 'help-details hidden');
 	ok($('[data-view-id="help-404"]').is(':visible'), '404 visible');
+
+//	app.nav('/about/secret/');
+//	equal(secretEl, $('[data-view-id="about"]')[0], 'secret');
 
 	app.nav('/');
 });

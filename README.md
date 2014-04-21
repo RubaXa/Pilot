@@ -889,11 +889,12 @@ Set a new location.
 
 ### 1.6.0
 <ul>
-	<li>(!!) `emit` -> `trigger` (!!)</li>
+	<li>Removed depending on jQuery</li>
 	<li>+ Support for alternative: `Deferred` & `Emitter`</li>
+	<li>(!!) `emit` -> `trigger` (!!)</li>
 	<li>+ `Pilot.Route.fn.setTemplate(fn)`</li>
-	<li>* Request: micro bug fixes</li>
-	<li>+ Request.fn.is</li>
+	<li>+ Pilot.Request.fn.is(id)</li>
+	<li>* Pilot.Request: micro bug fixes</li>
 	<li>* JSDoc</li>
 </ul>
 

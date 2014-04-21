@@ -724,6 +724,8 @@
 	test('req.is', function () {
 		var log = [];
 		var Router = Pilot.create({
+			el: document.createElement('div'),
+
 			'/': {
 				'/': {
 					id: 'idx',
