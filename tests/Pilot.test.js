@@ -220,7 +220,7 @@
 	/**
 	 * Test: Navigate by "id"
 	 */
-	test('Router.go', function (){
+	test('Router.getUrl', function (){
 		var Router = new Pilot, noop = function(){};
 
 		Router

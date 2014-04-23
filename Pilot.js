@@ -201,6 +201,7 @@
 				, selector: 'a[href],[data-nav]'
 				, basePath: '/'
 				, production: window.Pilot && window.Pilot.production
+				, hashBang: '#!'
 				, useHistory: false
 			}, options);
 
@@ -731,7 +732,7 @@
 						;
 			}
 
-			return	(Router.pushState ? '' : '#!') + path;
+			return	(Router.pushState ? '' : this.options.hashBang) + path;
 		},
 
 
