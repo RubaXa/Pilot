@@ -9,7 +9,7 @@ for the standard `Backbone.Router` and even `Backbone.View`. Just try it.
 
 ## Get started
 
- * [Gallery](./tutorial/#gallery-jquery--flickrapi): jQuery + FlickrAPI (step by step)
+ * [Gallery](./tutorial/#gallery-jquery--flickrapi): jQuery + FlickrAPI (step by step) ([слайды](http://rubaxa.github.io/friday/2014-04-11.html))
 
 
 
