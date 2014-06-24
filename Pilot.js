@@ -735,6 +735,22 @@
 		},
 
 
+		/**
+		 * Get request by route id & url
+		 * @param  {String}  id
+		 * @param  {Pilot.Request|String}  req
+		 * @return {Pilot.Request}
+		 */
+		parseURL: function (id, req) {
+			var item = this.getItem(id);
+
+			req = Router.parseURL(req);
+			item && _matchRoute(req, item.regexp, item.keys, req.params = []);
+
+			return req;
+		},
+
+
 		start: function (url){
 			if( !this.started ){
 				this._nav(url || this.request, false, true);

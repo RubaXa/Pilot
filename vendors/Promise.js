@@ -14,13 +14,20 @@
 		return function () {
 			var args = arguments;
 
+			/* istanbul ignore else */
 			if (typeof callback === 'function') {
 				var retVal = callback.apply(promise, args);
 				if (retVal && typeof retVal.then === 'function') {
-					retVal.done(promise.resolve).fail(promise.reject);
+					if (retVal.done && retVal.fail) {
+						retVal.done(promise.resolve).fail(promise.reject);
+					}
+					else {
+						retVal.then(promise.resolve, promise.reject);
+					}
 					return;
 				} else {
 					args = [retVal];
+					method = 'resolve';
 				}
 			}
 
@@ -30,17 +37,26 @@
 
 
 	/**
-	 * Fastest Promises.
+	 * «Обещания» поддерживают как [нативный](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+	 * интерфейс, так и [$.Deferred](http://api.jquery.com/category/deferred-object/).
 	 *
-	 * @class    Promise
-	 * @param   {Function}  [callback]
+	 * @class   Promise
+	 * @param   {Function}  [executor]
 	 * @returns {Promise}
 	 */
-	var Promise = function (callback) {
+	var Promise = function (executor) {
+		var _completed = false;
+
 		function _setState(state) {
 			return function () {
-				_args = arguments;
+				if (_completed) {
+					return dfd;
+				}
 
+				_args = arguments;
+				_completed = true;
+
+				// Затираем методы
 				dfd.done =
 				dfd.fail =
 				dfd.resolve =
@@ -49,13 +65,12 @@
 				};
 
 				dfd[state ? 'done' : 'fail'] = function (fn) {
+					/* istanbul ignore else */
 					if (typeof fn === 'function') {
 						fn.apply(dfd, _args);
 					}
 					return dfd;
 				};
-
-				dfd.catch = dfd.fail;
 
 				var fn,
 					fns = state ? _doneFn : _failFn,
@@ -65,6 +80,7 @@
 
 				for (; i < n; i++) {
 					fn = fns[i];
+					/* istanbul ignore else */
 					if (typeof fn === 'function') {
 						fn.apply(dfd, _args);
 					}
@@ -81,17 +97,34 @@
 			_doneFn = [],
 			_failFn = [],
 
-			dfd = {
+			dfd = /** @lends Promise.prototype */ {
+
+				/**
+				 * Добавляет обработчик, который будет вызван, когда «обещание» будет «разрешено»
+				 * @param  {Function}  fn  функция обработчик
+				 * @returns {Promise}
+				 */
 				done: function (fn) {
 					_doneFn.push(fn);
 					return dfd;
 				},
 
+				/**
+				 * Добавляет обработчик, который будет вызван, когда «обещание» будет «отменено»
+				 * @param  {Function}  fn  функция обработчик
+				 * @returns {Promise}
+				 */
 				fail: function (fn) {
 					_failFn.push(fn);
 					return dfd;
 				},
 
+				/**
+				 * Добавляет сразу два обработчика
+				 * @param   {Function}   [doneFn]   будет выполнено, когда «обещание» будет «разрешено»
+				 * @param   {Function}   [failFn]   или когда «обещание» будет «отменено»
+				 * @returns {Promise}
+				 */
 				then: function (doneFn, failFn) {
 					var promise = Promise();
 
@@ -110,23 +143,55 @@
 					return dfd;
 				},
 
+
+				/**
+				 * Добавить обработчик «обещаний» в независимости от выполнения
+				 * @param   {Function}   fn   функция обработчик
+				 * @returns {Promise}
+				 */
 				always: function (fn) {
 					return dfd.done(fn).fail(fn);
 				},
 
-				resolve: _setState(true),
+
+				/**
+				 * «Разрешить» «обещание»
+				 * @method
+				 * @param    {*}  result
+				 * @returns  {Promise}
+				 */
+				resolve:  _setState(true),
+
+
+				/**
+				 * «Отменить» «обещание»
+				 * @method
+				 * @param   {*}  result
+				 * @returns {Promise}
+				 */
 				reject: _setState(false)
 			}
 		;
 
 
-		// Like Native
-		dfd.catch = dfd.fail;
+		/**
+		 * @name  Promise#catch
+		 * @alias fail
+		 * @method
+		 */
+		dfd['catch'] = function (fn) {
+			return dfd.then(null, fn);
+		};
 
 
 		// Работеам как native Promises
-		if (typeof callback === 'function') {
-			callback(dfd.resolve, dfd.reject);
+		/* istanbul ignore else */
+		if (typeof executor === 'function') {
+			try {
+				executor(dfd.resolve, dfd.reject);
+			} catch (err) {
+				dfd.reject(err);
+			}
 		}
 
 		return dfd;
@@ -135,8 +200,10 @@
 
 	/**
 	 * Дождаться «разрешения» всех обещаний
-	 * @param {Array} iterable
-	 * @returns {Promise}
+	 * @static
+	 * @memberOf Promise
+	 * @param    {Array} iterable  массив значений/обещаний
+	 * @returns  {Promise}
 	 */
 	Promise.all = function (iterable) {
 		var dfd = Promise(),
@@ -148,6 +215,7 @@
 			_doneFn = function (val) {
 				values.push(val);
 
+				/* istanbul ignore else */
 				if (--remain <= 0) {
 					dfd.resolve(values);
 				}
@@ -180,8 +248,10 @@
 
 	/**
 	 * Дождаться «разрешения» всех обещаний и вернуть результат последнего
-	 * @param   {Array} iterable
-	 * @returns {Promise}
+	 * @static
+	 * @memberOf Promise
+	 * @param    {Array}   iterable   массив значений/обещаний
+	 * @returns  {Promise}
 	 */
 	Promise.race = function (iterable) {
 		return Promise.all(iterable).then(function (values) {
@@ -191,42 +261,52 @@
 
 
 	/**
-	 * Привести значение к «Общеанию»
-	 * @param   {*} value
-	 * @returns {Promise}
+	 * Привести значение к «Обещанию»
+	 * @static
+	 * @memberOf Promise
+	 * @param    {*}   value    переменная или объект имеющий метод then
+	 * @returns  {Promise}
 	 */
 	Promise.cast = function (value) {
-		var promise = Promise();
+		var promise = Promise().resolve(value);
 		return value && typeof value.then === 'function'
 			? promise.then(function () { return value; })
-			: promise.resolve(value)
+			: promise
 		;
 	};
 
 
 	/**
 	 * Вернуть «разрешенное» обещание
-	 * @param   {*} val
-	 * @returns {Promise}
+	 * @static
+	 * @memberOf Promise
+	 * @param    {*}   value    переменная
+	 * @returns  {Promise}
 	 */
-	Promise.resolve = function (val) {
-		return Promise().resolve(val);
+	Promise.resolve = function (value) {
+		return Promise().resolve(value);
 	};
 
 
 	/**
 	 * Вернуть «отклоненное» обещание
-	 * @param   {*} val
-	 * @returns {Promise}
+	 * @static
+	 * @memberOf Promise
+	 * @param    {*}   value    переменная
+	 * @returns  {Promise}
 	 */
-	Promise.reject = function (val) {
-		return Promise().reject(val);
+	Promise.reject = function (value) {
+		return Promise().reject(value);
 	};
 
 
+	// Версия модуля
+	Promise.version = "0.1.1";
+
+
 	// exports
-	if (typeof define === "function" && define.amd) {
-		define(function () {
+	if (typeof define === "function" && (define.amd || /* istanbul ignore next */ define.ajs)) {
+		define('Promise', [], function () {
 			return Promise;
 		});
 	} else if (typeof module != "undefined" && module.exports) {
@@ -234,6 +314,8 @@
 	}
 	else {
 		window.Deferred = Promise;
+
+		/* istanbul ignore else */
 		if (!window.Promise) {
 			window.Promise = Promise;
 		}

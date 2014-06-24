@@ -887,6 +887,11 @@ Set a new location.
 <a name="changelog"></a>
 ## Changelog
 
+<ul>
+	<li>+ `Pilot.fn.parseURL`</li>
+</ul>
+
+
 ### 1.6.0
 <ul>
 	<li>Removed depending on jQuery</li>
