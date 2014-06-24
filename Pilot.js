@@ -745,7 +745,7 @@
 			var item = this.getItem(id);
 
 			req = Router.parseURL(req);
-			item && _matchRoute(req, item.regexp, item.keys, req.params = []);
+			item && _matchRoute(req, item.regexp, item.keys, req.params);
 
 			return req;
 		},
@@ -916,7 +916,7 @@
 		_this.path		= path;
 		_this.pathname	= path;
 		_this.hash		= url.replace(/^.*?#/, '');
-		_this.params	= {};
+		_this.params	= [];
 		_this.referrer	= referrer;
 		_this.router	= router;
 	}
