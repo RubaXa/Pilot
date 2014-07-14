@@ -21,7 +21,27 @@
  */
 
 /*global window, define, unescape, ajs, Emitter*/
-(function (window){
+(function (factory) {
+	"use strict";
+
+	var win = typeof window !== 'undefined' && window,
+		callback = function (Promise, Emitter) {
+			return factory(win, Promise, Emitter);
+		}
+	;
+
+	if( typeof define === "function" && define.amd ){
+		define(
+			(win.jQuery || win.Promise && win.Emitter) ? [] : ['Promise', 'Emitter'],
+			callback
+		);
+	} else {
+		win["Pilot"] = callback();
+		if( win.ajs && ajs.loaded ){
+			ajs.loaded('{pilot}Pilot', win["Pilot"]);
+		}
+	}
+})(function (window, Promise, Emitter) {
 	"use strict";
 
 	/** @namespace window.performance.now  -- https://developer.mozilla.org/en-US/docs/Web/API/window.performance.now */
@@ -43,7 +63,7 @@
 		, undef		= void 0
 
 		, $			= window.jQuery || window.Zepto || window.ender || window.$ || function (el) { return el; }
-		, Deferred	= window.Deferred || $.Deferred
+		, Deferred	= Promise || window.Promise || window.Deferred || $.Deferred
 		, Event		= window.Emitter && Emitter.Event || $.Event
 
 		, history	= window.history
@@ -134,7 +154,7 @@
 	 * @class    MyEmitter
 	 * @extends  Emitter
 	 */
-	var MyEmitter = klass(window.Emitter && Emitter.fn || {
+	var MyEmitter = klass(Emitter && Emitter.fn || window.Emitter && window.Emitter.fn || {
 		__withoutEvents__: false,
 
 		__lego: function (){
@@ -179,6 +199,13 @@
 			return res;
 		}
 	});
+
+
+	if (Emitter) {
+		MyEmitter.fn.__lego = function () {
+			Emitter.apply(this, arguments);
+		};
+	}
 
 
 
@@ -876,6 +903,8 @@
 	 * @returns {Pilot.Request}
 	 */
 	function Request(url, referrer, router){
+		url += '';
+
 		if( !_rhttp.test(url) ){
 			if( '/' == url.charAt(0) ){
 				url = '//' + location.hostname + url;
@@ -1768,16 +1797,5 @@
 
 	// Export
 	Router.version	= '1.6.0';
-	window.Pilot	= Router;
-
-	if( typeof define === "function" && define.amd ){
-		define(function (){ return Router; });
-	}
-	else {
-		window["Pilot"] = Router;
-	}
-
-	if( window.ajs && ajs.loaded ){
-		ajs.loaded('{pilot}Pilot');
-	}
-})(window);
+	return Router;
+});
