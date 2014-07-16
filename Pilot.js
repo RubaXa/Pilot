@@ -84,6 +84,8 @@
 		}
 
 		, _isArray	= Array.isArray || $.isArray
+		, _contains = function (array, el) { return array.indexOf(el) !== -1; }
+
 		, _when = Deferred.all || Deferred.when || function (args){
 			return	$.when.apply($, args);
 		}
@@ -495,7 +497,7 @@
 								catch( err ){
 									dfd = Deferred().reject(err);
 									err.name = 'loadData';
-									this.trigger('error', err, req);
+									this.trigger('error', [err, req]);
 								}
 							}
 							else {
@@ -555,7 +557,7 @@
 							unit.trigger(name, req);
 						} catch( err ){
 							err.name = name.replace('-', '');
-							this.trigger('error', err, req);
+							this.trigger('error', [err, req]);
 							unit.setRouteError(err);
 						}
 					}
@@ -601,7 +603,7 @@
 						_tryEmit(unit, 'routeChange', req);
 					}
 				}
-				else if( (unit.active === true) && !~$.inArray(unit, this.activeUnits) ){
+				else if( (unit.active === true) && _contains(this.activeUnits, unit) ){
 					unit.active = false;
 					unit.request = req;
 					_tryEmit(unit, 'routeEnd', req);
@@ -679,7 +681,7 @@
 					this.nav(redirectTo);
 				}
 				else {
-					this.trigger('routeFail', req, opts);
+					this.trigger('routeFail', [req, opts]);
 				}
 			}
 		},
