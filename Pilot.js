@@ -31,10 +31,11 @@
 	;
 
 	if( typeof define === "function" && define.amd ){
-		define(
-			(win.jQuery || win.Promise && win.Emitter) ? [] : ['Promise', 'Emitter'],
-			callback
-		);
+		if (win.jQuery || win.Deferred && win.Emitter) {
+			define([], callback);
+		} else {
+			define(['Promise', 'Emitter'], callback);
+		}
 	} else {
 		win["Pilot"] = callback();
 		if( win.ajs && ajs.loaded ){
@@ -63,7 +64,7 @@
 		, undef		= void 0
 
 		, $			= window.jQuery || window.Zepto || window.ender || window.$ || function (el) { return el; }
-		, Deferred	= Promise || window.Promise || window.Deferred || $.Deferred
+		, Deferred	= Promise || window.Deferred || $.Deferred
 		, Event		= window.Emitter && Emitter.Event || $.Event
 
 		, history	= window.history
@@ -279,7 +280,7 @@
 					url = el.getAttribute('data-nav') || el.getAttribute('href')
 				;
 
-				if (el.target != '_blank') {
+				if (el.target != '_blank' && !evt.isDefaultPrevented()) {
 					evt.preventDefault();
 
 					if( url === 'back' || url === 'forward' ){
@@ -424,18 +425,18 @@
 		},
 
 
-		_loadUnits: function (req/**Pilot.Request*/, originUnits){
+		_loadUnits: function (req/**Pilot.Request*/, originUnits) {
 			var
 				  queue = []
 				, accessQueue = []
-				, task
+				, route
 				, dfd
 				, access
 				, accessDenied
-				, units
+				, routes
 				, promise
 				, production = this.options.production
-				, addSubRoute = function (route, name){
+				, addSubRoute = function (route, name) {
 					if( !route.__self ){
 						if( !route.fn || !route.fn.__lego ){
 							route = View.extend(route);
@@ -453,28 +454,28 @@
 					}
 
 					route.requestParams = this.requestParams;
-					units.push(route);
+					routes.push(route);
 				}
 			;
 
 			// Clone
-			units = originUnits.concat();
+			routes = originUnits.concat();
 
-			while( task = units.shift() ){
-				if( task && task.isActive(originUnits) ){
-					req.params = task.requestParams;
+			while( route = routes.shift() ){
+				if( route && route.isActive(originUnits) ){
+					req.params = route.requestParams;
 
 					dfd = null;
-					task.setRouteError(null);
+					route.setRouteError(null);
 
-					access = _getRouteAccess(task, req);
-					accessDenied = task.accessDeniedRedirectTo && {
-						  redirectTo: task.accessDeniedRedirectTo
-						, redirectParams: task.requestParams
+					access = _getRouteAccess(route, req);
+					accessDenied = route.accessDeniedRedirectTo && {
+						  redirectTo: route.accessDeniedRedirectTo
+						, redirectParams: route.requestParams
 					};
 
 					if( !access ){
-						task.trigger('accessDenied', req);
+						route.trigger('accessDenied', req);
 						return Deferred().reject(accessDenied);
 					}
 					else if( access.then ){
@@ -482,17 +483,17 @@
 						accessQueue.push(access);
 					}
 
-					_each(task.subroutes, addSubRoute, task);
+					_each(route.subroutes, addSubRoute, route);
 
-					if( task.templateUrl ){
-						queue.push(Router.loadTemplate(task.templateUrl, task).then(_bind(task, task.setTemplate)));
+					if( route.templateUrl ){
+						queue.push(Router.loadTemplate(route.templateUrl, route).then(_bind(route, route.setTemplate)));
 					}
 
-					if( task.loadData ){
+					if( route.loadData ){
 						if( !access || !access.then ){
 							if( production ){
 								try {
-									dfd = task.loadData(req, this._navByHistory);
+									dfd = route.loadData(req, this._navByHistory);
 								}
 								catch( err ){
 									dfd = Deferred().reject(err);
@@ -501,26 +502,26 @@
 								}
 							}
 							else {
-								dfd = task.loadData(req, this._navByHistory);
+								dfd = route.loadData(req, this._navByHistory);
 							}
 						}
 						else {
-							dfd = _bind(task, 'loadData', req, this._navByHistory);
+							dfd = _bind(route, 'loadData', req, this._navByHistory);
 						}
 					}
 
 					if( dfd ){
 						if( typeof dfd.then === 'function' ){
 							dfd.then(
-								  _bind(task, task.setLoadedData)
-								, _bind(task, task.setRouteError)
+								  _bind(route, route.setLoadedData)
+								, _bind(route, route.setRouteError)
 							);
 							queue.push(dfd);
 						}
 					}
 
 					if( !dfd || typeof dfd.then !== 'function' ){
-						task.setLoadedData(dfd);
+						route.setLoadedData(dfd);
 					}
 
 					delete req.params;
@@ -533,8 +534,8 @@
 				_when(accessQueue)
 					.then(function (){
 						_when(queue).then(promise.resolve, promise.reject);
-					}, function (){
-						promise.reject(access.denied);
+					}, function (denied){
+						promise.reject(access.denied || denied);
 					})
 				;
 			}
@@ -603,7 +604,7 @@
 						_tryEmit(unit, 'routeChange', req);
 					}
 				}
-				else if( (unit.active === true) && _contains(this.activeUnits, unit) ){
+				else if( (unit.active === true) && !_contains(this.activeUnits, unit) ){
 					unit.active = false;
 					unit.request = req;
 					_tryEmit(unit, 'routeEnd', req);
@@ -663,9 +664,9 @@
 					if( redirectTo === '..' ){
 						redirectTo = req.path.split('/');
 
-						if( redirectTo.pop() === "" ){
+						if( redirectTo.pop() === '' ){
 							redirectTo.pop();
-							redirectTo.push("");
+							redirectTo.push('');
 						}
 
 						redirectTo = redirectTo.join('/');
@@ -806,11 +807,16 @@
 				this.activeRequest	= req;
 
 				if( units.length ){
-					this._loadUnits(req, units)
-						.done(_bind(this, this._doRouteDone, req))
-						.fail(_bind(this, this._doRouteFail, req))
-						.then(df.resolve, df.reject)
-					;
+					try {
+						this._loadUnits(req, units)
+							.done(_bind(this, this._doRouteDone, req))
+							.fail(_bind(this, this._doRouteFail, req))
+							.then(df.resolve, df.reject)
+						;
+					} catch (err) {
+						this.trigger('error', [req, err]);
+						df.reject();
+					}
 				} else {
 					// not found
 					this._doRouteDone(req);
