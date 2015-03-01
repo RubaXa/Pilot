@@ -4,16 +4,10 @@
 	<meta charset="utf-8"/>
 	<title>Pilot :: tests</title>
 
-	<script src="../vendors/performance.js"></script>
-	<script src="../vendors/Emitter.js"></script>
-	<script>
-		var __Emitter = window.Emitter;
-		delete window.Emitter;
-	</script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.1.15/require.js"></script>
 
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 	<script src="http://code.jquery.com/qunit/qunit-git.js"></script>
-
 	<link href="http://code.jquery.com/qunit/qunit-git.css" rel="stylesheet"/>
 
 	<script>
@@ -24,44 +18,31 @@
 		}
 	</script>
 
-
-	<script src="../Pilot.js"></script>
-
-	<script>Pilot.production = /phantom/i.test(navigator.userAgent);</script>
-	<script src="Pilot.test.js"></script>
-	<script src="Pilot.access.test.js"></script>
-	<script src="Pilot.profiler.test.js"></script>
-	<script src="Pilot.app.test.js"></script>
-	<script src="Pilot.bench.test.js"></script>
-
-	<style>
-		.active { color: red; }
-	</style>
 </head>
 <body>
 
-	<h1 id="qunit-header">Pilot :: tests</h1>
-	<h2 id="qunit-banner"></h2>
-	<div id="qunit-testrunner-toolbar"></div>
-	<h2 id="qunit-userAgent"></h2>
-	<ol id="qunit-tests"></ol>
+	<div id="qunit"></div>
+	<div id="qunit-fixture"></div>
 
 
-	<div id="app">
-		<div data-subview-id="menu">
-			<a href="#!/">Index</a>
-			<a href="#!/help">help</a>
-		</div>
+	<script>
+		QUnit.config.autostart = false;
 
-		<div data-view-id="index" style="display: none">index page</div>
-		<div data-view-id="about" style="display: none">about page</div>
+		requirejs.config({
+			baseUrl: '../src/',
+			paths: {
+				tests: '../tests/'
+			}
+		});
 
-		<div data-view-id="help" style="display: none">
-			help page
-			<div data-view-id="help-details" style="display: none">help-details</div>
-			<div data-view-id="help-404" style="display: none">404 page</div>
-		</div>
-	</div>
+		require([
+			'tests/querystring.tests',
+			'tests/url.tests'
+		], function () {
+			QUnit.start();
+		});
+	</script>
+
 
 </body>
 </html>
