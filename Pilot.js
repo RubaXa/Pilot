@@ -194,7 +194,7 @@
 		 */
 		__lego: function __(options){
 			// call the parent method
-			__.parent.call(this);
+			MyEmitter.prototype.__lego.call(this);
 
 			this.options	= options = _extend({
 				  el: null
@@ -1009,7 +1009,7 @@
 		parentRouteId: null,
 
 		__lego: function __(options){
-			__.parent.call(this);
+			MyEmitter.prototype.__lego.call(this);
 
 			_extend(this, options);
 
@@ -1240,7 +1240,7 @@
 
 
 			// Call the parent method
-			__.parent.call(this);
+			Route.prototype.__init.call(this);
 
 
 			// Init subroutes
