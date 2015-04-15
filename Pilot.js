@@ -251,7 +251,7 @@
 					url = el.getAttribute('data-nav') || el.getAttribute('href')
 				;
 
-				if (el.target != '_blank') {
+				if (el.target !== '_blank' && el.target !== '_self') {
 					evt.preventDefault();
 
 					if( url === 'back' || url === 'forward' ){
