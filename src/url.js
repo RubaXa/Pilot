@@ -3,7 +3,7 @@
  * Base on http://jsperf.com/url-parsing/26
  */
 
-define(['querystring'], function (/** queryString */queryString) {
+define(['./querystring'], function (/** queryString */queryString) {
 	'use strict';
 
 	var parseQueryString = queryString.parse;
@@ -59,7 +59,7 @@ define(['querystring'], function (/** queryString */queryString) {
 	 */
 	function Url(url, base) {
 		if (base === void 0) {
-			base = ABOUT_BLANK;
+			base = location;
 		} else if (typeof base === 'string') {
 			base = new Url(base);
 		}
@@ -108,6 +108,7 @@ define(['querystring'], function (/** queryString */queryString) {
 		this.port = matches[12] || '';
 		this.origin = this.protocol + this.protocolSeparator + this.hostname;
 
+		this.path =
 		this.pathname = matches[13] || '/';
 
 		this.segment1 = matches[14] || '';
@@ -133,7 +134,7 @@ define(['querystring'], function (/** queryString */queryString) {
 		 * @returns {Url}
 		 */
 		setQuery: function (query, remove) {
-			var _query = this.query,
+			var query = this.query,
 				key;
 
 			query = parseQueryString(query);
@@ -145,20 +146,20 @@ define(['querystring'], function (/** queryString */queryString) {
 				if (query !== void 0) {
 					for (key in query) {
 						if (query[key] === null) {
-							delete _query[key];
+							delete query[key];
 						} else {
-							_query[key] = query[key];
+							query[key] = query[key];
 						}
 					}
 				}
 
 				if (remove) {
-					if (!(remove instanceof Array)) {
+					if (typeof remove === 'string') {
 						remove = remove.split('&');
 					}
 
 					remove.forEach(function (name) {
-						delete _query[name];
+						delete query[name];
 					});
 				}
 			}
@@ -225,15 +226,95 @@ define(['querystring'], function (/** queryString */queryString) {
 	Url.parseQueryString = queryString.parse;
 
 
-
 	/**
 	 * Stringify query object
 	 * @method  Url.parseQueryString
 	 * @param   {Object} query
 	 * @returns {string}
 	 */
-	Url.stringifyQueryString = queryString.stringify;
+	Url.stringifyQueryString = stringifyQueryString;
 
 
+	/**
+	 * Конвертация описания пути в регулярное выражение
+	 * @param  {string|RegExp}  pattern
+	 * @return {RegExp}
+	 */
+	Url.toMatcher = function (pattern) {
+		// https://github.com/visionmedia/express/blob/master/lib/utils.js#L248
+		if (pattern instanceof RegExp) {
+			return pattern;
+		}
+
+		if (Array.isArray(pattern)) {
+			pattern = '(' + pattern.join('|') + ')';
+		}
+
+		var keys = [];
+
+		pattern = pattern
+			.concat('/*')
+			//.replace(/(\/\(|\(\/)/g, '(?:/')
+			.replace(/\(([^\?])/g, '(?:$1')
+			.replace(/(\/)?(\.)?:(\w+)(?:(\([^)]+\)))?(\?)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
+				keys.push({
+					name: key,
+					optional: !!optional
+				});
+
+				slash = slash || '';
+
+				return '' +
+					(optional ? '' : slash) +
+					'(?:' +
+					(optional ? slash : '') +
+					(format || '') + (capture || (format && '([^/.]+)' || '([^/]+)')).replace('(?:', '(') + ')' +
+					(optional || '') +
+					(star ? '(/*)?' : '')
+				;
+			})
+			.replace(/([\/.])/g, '\\$1')
+		;
+
+		pattern = new RegExp('^' + pattern + '$', 'i');
+		pattern.keys = keys;
+
+		return pattern;
+	};
+
+
+	/**
+	 * Вытащить параметры из url
+	 * @param   {string}      pattern
+	 * @param   {string|Url}  [url]
+	 * @returns {Object|null}
+	 */
+	Url.match = function (pattern, url) {
+		var i, n,
+			value,
+			params = {},
+			matches;
+
+		url = Url.parse(url);
+		pattern = Url.toMatcher(pattern);
+		matches = pattern.exec(url.path);
+
+		if (matches) {
+			for (i = 1, n = matches.length; i < n; i++) {
+				value = matches[i];
+
+				if (value !== void 0) {
+					params[pattern.keys[i - 1].name] = value;
+				}
+			}
+
+			return params;
+		}
+
+		return null;
+	};
+
+
+	// Export
 	return Url;
 });

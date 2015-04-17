@@ -4,8 +4,9 @@
 	"devDependencies": {
 		"grunt": "~0.4.0",
 		"grunt-version": "*",
-		"grunt-contrib-jshint": "~0.2.0",
-		"grunt-contrib-qunit": "*",
+		"grunt-babel": "4.0.0",
+		"grunt-contrib-jshint": "0.9.2",
+		"grunt-qunit-istanbul": "*",
 		"grunt-contrib-uglify": "*"
 	},
 	"description": "Multifunction JavaScript router.",

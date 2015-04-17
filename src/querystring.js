@@ -1,7 +1,6 @@
 define([], function () {
 	'use strict';
 
-
 	var encodeURIComponent = window.encodeURIComponent;
 	var decodeURIComponent = window.decodeURIComponent;
 
@@ -54,7 +53,7 @@ define([], function () {
 
 				for (; i < n; i++) {
 					pair = pairs[i].split('=');
-					name = pair.shift();
+					name = pair.shift().replace('[]', '');
 					val = pair.join('=');
 
 					if (val === void 0){
@@ -69,7 +68,9 @@ define([], function () {
 						}
 					}
 
-					if (name.length > 0) {
+					if (name) {
+
+
 						if (query[name] === void 0) {
 							query[name] = val;
 						}

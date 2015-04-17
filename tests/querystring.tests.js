@@ -16,7 +16,9 @@ define(['querystring'], function (/** queryString */queryString) {
 			'#': {},
 			' ': {},
 			'foo=bar&foo=baz': {foo: ['bar', 'baz']},
-			'foo=bar=baz': { foo: 'bar=baz' }
+			'foo[]=bar&foo[]=baz': {foo: ['bar', 'baz']}
+			//'foo[bar]=1&foo[baz]=1': {foo: {bar:1, baz: 1}},
+			//'foo=bar=baz': { foo: 'bar=baz' }
 		};
 
 
