@@ -41,13 +41,30 @@ module.exports = function (grunt){
 			}
 		},
 
-		"babel": {
-			options: {
-				sourceMap: true
-			},
-			dist: {
-				files: {
-					"dist/app.js": "src/app.js"
+		requirejs: {
+			compile: {
+				options: {
+					findNestedDependencies: true,
+					baseUrl: './',
+					include: 'src/pilot.js',
+					paths: {
+						'Emitter': 'empty:'
+					},
+					out: 'Pilot.js',
+					optimize: 'none',
+					'onModuleBundleComplete': function (data) {
+						var fs = require('fs'),
+							amdclean = require('amdclean'),
+							outputFile = data.path;
+
+						fs.writeFileSync(outputFile, amdclean.clean({
+							'filePath': outputFile,
+							'wrap': {
+								start: ';define(["Emitter"], function(Emitter) {',
+								end: '; return src_pilotjs;});'
+							}
+						}));
+					}
 				}
 			}
 		}
@@ -59,14 +76,17 @@ module.exports = function (grunt){
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-qunit-istanbul');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-requirejs');
 
 
 	// Тестирование
 	grunt.registerTask('test', ['jshint', 'qunit']);
 
+	// Сборка
+	grunt.registerTask('build', ['requirejs']);
+
 	// Минификация
 	grunt.registerTask('min', ['uglify']);
-
 
 	// Default task.
 	grunt.registerTask('default', ['version', 'test']);

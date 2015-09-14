@@ -1241,7 +1241,7 @@ var requirejs, require, define;
              * Set a configuration for the context.
              * @param {Object} cfg config object to integrate.
              */
-            configure: function (cfg) {
+            setup: function (cfg) {
                 //Make sure the baseUrl ends in a slash.
                 if (cfg.baseUrl) {
                     if (cfg.baseUrl.charAt(cfg.baseUrl.length - 1) !== '/') {
@@ -1717,7 +1717,7 @@ var requirejs, require, define;
         }
 
         if (config) {
-            context.configure(config);
+            context.setup(config);
         }
 
         return context.require(deps, callback, errback);

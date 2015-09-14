@@ -1,5 +1,6 @@
 define([
 	'Emitter',
+	'./url',
 	'./match',
 	'./loader',
 	'./request',
@@ -7,6 +8,7 @@ define([
 	'./status'
 ], function (
 	/** Emitter */Emitter,
+	/** URL */URL,
 	/** Object */match,
 	/** Pilot.Loader */Loader,
 	/** Pilot.Request */Request,
@@ -15,20 +17,28 @@ define([
 ) {
 	'use strict';
 
-	var URL = window.URL;
+	var resolvedPromise = Promise.resolve();
 
 
 	function _normalizeRouteUrl(url, relative) {
+		relative = relative || {};
+
+		if (!url) {
+			url = relative.pattern;
+		}
+
 		if (typeof url === 'string') {
 			url = { pattern: url };
 		}
 
 		if (url.pattern.charAt(0) !== '/') {
-			url.pattern = (relative.pattern + '/' + url.pattern.replace(/(^\.\/|^\.$)/, '')).replace(/\/+/g, '/');
+			url.pattern = (relative.pattern + '/' + url.pattern.replace(/(^\.\/|^\.$)/, ''));
 		}
 
-		url.params = url.params || {};
-		url.query = url.query || {};
+		url.pattern = url.pattern.replace(/\/+/g, '/');
+		url.params = url.params || relative.params || {};
+		url.query = url.query || relative.query || {};
+		url.toUrl = url.toUrl || relative.toUrl;
 
 		return url;
 	}
@@ -37,51 +47,67 @@ define([
 
 	/**
 	 * @class Pilot
+	 * @param {Object} map крата маршрутов
 	 */
 	var Pilot = function (map) {
 		var routes = [];
 
-		map.model = new Loader(map.model);
+		map.url = map.url || '/';
 		map.access = map.access || function () {
-			return Promise.resolve();
+			return resolvedPromise;
 		};
 
-
 		// Подготавливаем данные
-		(function _prepare(map) {
+		(function _prepareRoute(map) {
 			map.__group__ = false;
 
 			Object.keys(map).forEach(function (key) {
-				var value = map[key];
+				var options = map[key];
 
 				if (key.charAt(0) === '#') {
-					// Это маршрут, а значит map — группа
+					// Это маршрут, следовательно `map` — группа
 					map.__group__ = true;
 					delete map[key];
 
-					value.id = key;
-					value.url = _normalizeRouteUrl(value.url, map.url);
-					value.model = map.model.extend(value.model);
-					value.access = value.access || map.access;
+					options.id = key;
+					options.parentId = map.id;
 
-					routes.push(value);
-					_prepare(value);
+					options.url = _normalizeRouteUrl(options.url, map.url);
+					options.model = map.model.extend(options.model);
+					options.access = options.access || map.access;
+
+					routes.push(options);
+					_prepareRoute(options);
 				}
 			});
-		})(map);
+		})({'#__root__': map, model: new Loader(map.model) });
 
 
 		this.model = map.model.defaults();
 		this.__model__ = map.model;
 
+
+		/**
+		 * Текущий реквест
+		 * @type {Pilot.Request}
+		 */
 		this.request = new Request('about:blank', '', this);
+
+
+		/**
+		 * Активный URL
+		 * @type {URL}
+		 */
 		this.activeUrl = new URL('about:blank');
 
 
+		/**
+		 * Массив маршрутов
+		 * @type {Pilot.Route[]}
+		 */
 		this.routes = routes.map(function (route) {
-			route = new Route(route);
+			route = new Route(route, this);
 
-			route.router = route;
 			this[route.id] = route;
 
 			return route;
@@ -92,17 +118,46 @@ define([
 	Pilot.prototype = /** @lends Pilot# */{
 		constructor: Pilot,
 
+		/**
+		 * Получить URL по id
+		 * @param  {string} id
+		 * @param  {Object} [params]
+		 */
+		getUrl: function (id, params) {
+			return this[id].getUrl(params);
+		},
+
+
+		/**
+		 * Перейти по id
+		 * @param  {string} id
+		 * @param  {Object} [params]
+		 * @return {Promise}
+		 */
+		go: function (id, params) {
+			return this.nav(this[id].getUrl(params));
+		},
+
+
+		/**
+		 * Навигация по маршруту
+		 * @param   {string|URL|Pilot.Request}  href
+		 * @returns {Promise}
+		 */
 		nav: function (href) {
 			var req,
-				url = new URL(href),
+				url = new URL(href.toString(), location),
 				_this = this,
 				routes = _this.routes,
 				_promise = _this._promise,
 				currentRoute;
 
-
+			// URL должен отличаться от активного
 			if (_this.activeUrl.href !== url.href) {
+				// Создаем объект реквеста и дальше с ним работаем
 				req = new Request(url, _this.request.href, _this);
+
+				// Находим нужный нам маршрут
 				currentRoute = routes.filter(function (/** Pilot.Route */item) {
 					return !item.__group__ && item.match(url, req);
 				})[0];
@@ -110,7 +165,7 @@ define([
 
 				_this.activeUrl = url;
 				_this.activeRequest = req;
-
+				_this.activeRoute = currentRoute;
 
 				_this.trigger('before-route', [req]);
 
@@ -136,12 +191,15 @@ define([
 
 
 				if (!currentRoute) {
+					// Если маршрут не найден, кидаем ошибку
 					_this._reject(new Status(404));
 				}
 				else {
 					req.route = currentRoute;
 
+					// Запрашиваем доступ к маршруту
 					currentRoute.access(req).then(function () {
+						// Доступ есть, теперь собираем данные для маршрута
 						return currentRoute.fetch(req).then(function (/** Object */model) {
 							if (_this.activeUrl === url) {
 								_this.url = url;
@@ -152,39 +210,8 @@ define([
 								_this.request = req;
 
 								// Обходим всем маршруты и тегерим события
-								routes.forEach(function (/** Pilot.Route */route) {
-									var localReq = req.clone();
-
-
-									// Либо группа, либо «мы» (защита от множественных маршрутов)
-									if (route.__group__ && route.match(url, localReq) || route === currentRoute) {
-										route.model = route.__model__.extract(model);
-										route.params = localReq.params;
-										route.request = localReq;
-
-										route.trigger('model', [model, localReq]);
-
-										if (!route.active) {
-											route.active = true;
-
-											route.trigger('before-route-start', localReq);
-											route.trigger('route-start', localReq);
-										}
-										else {
-											route.trigger('before-route-change', localReq);
-											route.trigger('route-change', localReq);
-										}
-
-										route.trigger('before-route', localReq);
-										route.trigger('route', localReq);
-									}
-									else if (route.active) {
-										route.active = false;
-										route.model = route.__model__.defaults();
-
-										route.trigger('before-route-end', localReq);
-										route.trigger('route-end', localReq);
-									}
+								routes.forEach(function (/** Route */route) {
+									route.handling(url, req.clone(), currentRoute, model);
 								});
 
 								_this.trigger('route', [req, currentRoute]);
@@ -195,6 +222,10 @@ define([
 							}
 						});
 					})['catch'](function (err) {
+						console.warn(err);
+
+						// todo: Редирект!
+						// Обработка ошибки
 						if (_this.activeUrl === url) {
 							_this._promise = null;
 							_this._reject(Status.from(err));
@@ -205,7 +236,7 @@ define([
 				}
 			}
 
-			return _promise || Promise.resolve();
+			return _promise || resolvedPromise;
 		}
 	};
 

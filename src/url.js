@@ -11,22 +11,6 @@ define(['./querystring'], function (/** queryString */queryString) {
 	var encodeURIComponent = window.encodeURIComponent;
 
 
-
-	var ABOUT_BLANK = {
-		href: 'about:blank',
-		protocol: 'about:',
-		host: '',
-		hostname: '',
-		port: '',
-		pathname: 'blank',
-		search: '',
-		origin: null,
-		toString: function () {
-			return this.href;
-		}
-	};
-
-
 	/**
 	 * URL Parser
 	 * @type {RegExp}
@@ -71,7 +55,7 @@ define(['./querystring'], function (/** queryString */queryString) {
 		}
 		else  if (!R_PROTOCOL.test(url)) {
 			var protocol = base.protocol,
-				hostname = base.hostname,
+				host = base.host,
 				pathname = base.pathname;
 
 			if (url.charAt(0) === '#') {
@@ -83,11 +67,11 @@ define(['./querystring'], function (/** queryString */queryString) {
 			}
 			else  if (url.charAt(0) === '/') {
 				// absolute path
-				url = protocol + DOUBLE_SLASH + hostname + url;
+				url = protocol + DOUBLE_SLASH + host + url;
 			}
 			else {
 				// relative path
-				url = protocol + DOUBLE_SLASH + hostname + pathname.substr(0, pathname.lastIndexOf('/') + 1) + url;
+				url = protocol + DOUBLE_SLASH + host + pathname.substr(0, pathname.lastIndexOf('/') + 1) + url;
 			}
 		}
 
@@ -254,6 +238,7 @@ define(['./querystring'], function (/** queryString */queryString) {
 
 		pattern = pattern
 			.concat('/*')
+			.replace(/\/+/g, '/')
 			//.replace(/(\/\(|\(\/)/g, '(?:/')
 			.replace(/\(([^\?])/g, '(?:$1')
 			.replace(/(\/)?(\.)?:(\w+)(?:(\([^)]+\)))?(\?)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
@@ -314,6 +299,10 @@ define(['./querystring'], function (/** queryString */queryString) {
 		return null;
 	};
 
+
+	if (!window.URL) {
+		window.URL = Url;
+	}
 
 	// Export
 	return Url;

@@ -150,4 +150,13 @@ define(['url', './urls'], function (Url, urls) {
 		deepEqual(Url.match(pattern, '/foo/details/123'), {page: 'foo', id: '123'});
 		deepEqual(Url.match(pattern, '/details/123'), null);
 	});
+
+
+
+	test('/:folder(foo|\\d+)?', function () {
+		var pattern = '/:folder(foo|\\d+)?';
+		var matcher = Url.toMatcher(pattern);
+
+		equal(matcher.source, '^\\/(?:(foo|\\d+))?\\/*$');
+	});
 });

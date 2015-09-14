@@ -1,5 +1,4 @@
-define(['./querystring'], function (/** queryString */queryString) {
-	var URL = window.URL;
+define(['./url', './querystring'], function (/** URL */URL, /** queryString */queryString) {
 
 
 	/**
@@ -43,6 +42,10 @@ define(['./querystring'], function (/** queryString */queryString) {
 			req.params = this.params;
 
 			return req;
+		},
+
+		is: function (id) {
+			return !!(this.route && (this.route.id == id));
 		},
 
 		toString: function () {

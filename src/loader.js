@@ -99,6 +99,11 @@ define(['./match'], function (match) {
 		},
 
 
+		/**
+		 * Достаем только принадлежание лоудеру свойства
+		 * @param   {Object}  model
+		 * @returns {Object}
+		 */
 		extract: function (model) {
 			var data = {};
 

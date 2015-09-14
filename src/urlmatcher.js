@@ -1,4 +1,4 @@
-define(['url'], function (URL) {
+define(['./url'], function (URL) {
 	/**
 	 * @class URLMatcher
 	 */
