@@ -195,6 +195,7 @@
 			return res;
 		}
 	});
+	MyEmitter.prototype.emit = MyEmitter.prototype.trigger;
 
 
 
@@ -807,6 +808,22 @@
 
 
 		/**
+		 * Get request by route id & url
+		 * @param  {String}  id
+		 * @param  {Pilot.Request|String}  req
+		 * @return {Pilot.Request}
+		 */
+		parseURL: function (id, req) {
+			var item = this.getItem(id);
+
+			req = Router.parseURL(req);
+			item && _matchRoute(req, item.regexp, item.keys, req.params);
+
+			return req;
+		},
+
+
+		/**
 		 * Go to by id route
 		 *
 		 * @param	{String}	id
@@ -867,6 +884,8 @@
 	 * @returns {Pilot.Request}
 	 */
 	function Request(url, referrer, router){
+		url = url.toString();
+
 		if( !_rhttp.test(url) ){
 			if( '/' == url.charAt(0) ){
 				url = '//' + location.hostname + url;
@@ -1614,8 +1633,6 @@
 					else {
 						return	false;
 					}
-				} else {
-					params.push(val);
 				}
 			}
 
