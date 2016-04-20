@@ -468,7 +468,11 @@
 								}
 								catch( err ){
 									dfd = Deferred().reject(err);
-									err.name = 'loadData';
+
+									if (err instanceof Object) {
+										err.name = 'loadData';
+									}
+
 									this.trigger('error', err, req);
 								}
 							}
@@ -528,7 +532,10 @@
 						try {
 							unit.trigger(name, req);
 						} catch( err ){
-							err.name = name.replace('-', '');
+							if (err instanceof Object) {
+								err.name = name.replace('-', '');
+							}
+
 							this.trigger('error', err, req);
 							unit.setRouteError(err);
 						}
