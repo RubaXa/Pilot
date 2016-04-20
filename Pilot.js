@@ -78,7 +78,23 @@
 		, _timeEnd = function (ctx, label){ ctx._profilerTimers.push([label, _now(), 1]); }
 	;
 
+	function _tryEmit(production, router, unit, name, req){
+		if( production ){
+			try {
+				unit.trigger(name, req);
+			} catch( err ){
+				if (err instanceof Object) {
+					err.name = name.replace('-', '');
+				}
 
+				router.trigger('error', err, req);
+				unit.setRouteError(err);
+			}
+		}
+		else {
+			unit.trigger(name, req);
+		}
+	}
 
 
 	/**
@@ -526,24 +542,7 @@
 			var
 				options = this.options,
 				profile = options.profile,
-				production = options.production,
-				_tryEmit = _bind(this, function (unit, name, req){
-					if( production ){
-						try {
-							unit.trigger(name, req);
-						} catch( err ){
-							if (err instanceof Object) {
-								err.name = name.replace('-', '');
-							}
-
-							this.trigger('error', err, req);
-							unit.setRouteError(err);
-						}
-					}
-					else {
-						unit.trigger(name, req);
-					}
-				})
+				production = options.production
 			;
 
 			_each(items, function (item){
@@ -570,22 +569,22 @@
 					if( unit.active !== true ){
 						routeChange = false;
 						unit.active = true;
-						_tryEmit(unit, 'routeStart', req);
+						_tryEmit(production, this, unit, 'routeStart', req);
 					}
 					else if( true ){
 						// @todo: Проверить изменение параметров, если их нет, не вызывать событие
 					}
 
-					_tryEmit(unit, 'route', req);
+					_tryEmit(production, this, unit, 'route', req);
 
 					if( routeChange ){
-						_tryEmit(unit, 'routeChange', req);
+						_tryEmit(production, this, unit, 'routeChange', req);
 					}
 				}
 				else if( (unit.active === true) && !~$.inArray(unit, this.activeUnits) ){
 					unit.active = false;
 					unit.request = req;
-					_tryEmit(unit, 'routeEnd', req);
+					_tryEmit(production, this, unit, 'routeEnd', req);
 				}
 
 				if( profile && unit.__self ){
