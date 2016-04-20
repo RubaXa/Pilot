@@ -225,6 +225,7 @@
 
 		Router
 			.route('blog', '/blog/:id?/:search?/(page/:page)?', noop)
+			.route('blog-post', '/blog/post/:name([a-z]+)?', noop)
 			.route('addressbook-my', '/addressbook/my/(letter/:letter?)', noop)
 			.route('addressbook-user', '/addressbook/user/(letter/:letter)', noop)
 			.route('addressbook-label', '/addressbook/label/:id/(letter/:letter)', noop)
@@ -236,6 +237,8 @@
 		equal(Router.getUrl('blog', { id: 1 }), '#!/blog/1/', 'blog [id=1]');
 		equal(Router.getUrl('blog', { id: 1, search: 'abc' }), '#!/blog/1/abc/', 'blog [id,search]');
 		equal(Router.getUrl('blog', { id: 1, search: 'abc', page: 123 }), '#!/blog/1/abc/page/123', 'blog [id,search,page]');
+
+		equal(Router.getUrl('blog-post', { name: 'pilot' }), '#!/blog/post/pilot', 'blog-entry [name]');
 
 
 		Pilot.pushState = true;

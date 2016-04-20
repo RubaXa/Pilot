@@ -732,6 +732,7 @@
 								val	= key && params[key.name];
 								return	val ? val + (slash||'') : '('+_+')';
 							})
+							.replace(/\(.*[\+\[\]]+.*\)+\??/g, '')
 							.replace(/\(.*?:[^)]+\)+\??/g, '')
 							.replace(/\(|\)\??/g, '')
 							.replace(/\/+/g, '/')
