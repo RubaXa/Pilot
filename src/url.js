@@ -300,10 +300,6 @@ define(['./querystring'], function (/** queryString */queryString) {
 	};
 
 
-	if (!window.URL) {
-		window.URL = Url;
-	}
-
 	// Export
 	return Url;
 });

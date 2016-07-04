@@ -1,6 +1,6 @@
 {
   "name": "pilotjs",
-  "version": "2.0.0-dev.2",
+  "version": "2.0.0-dev.3",
   "devDependencies": {
     "amdclean": "^2.7.0",
     "grunt": "~0.4.0",
@@ -31,6 +31,7 @@
     "Pilot.js"
   ],
   "dependencies": {
-    "grunt-requirejs": "^0.4.2"
+    "grunt-requirejs": "^0.4.2",
+    "request": "^2.65.0"
   }
 }

@@ -253,8 +253,6 @@ define([
 
 	Emitter.apply(Pilot.prototype);
 
-
-	// Export
 	Pilot.version = '2.0.0';
 	return Pilot;
 });

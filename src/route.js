@@ -301,7 +301,7 @@ define([
 		 */
 		match: function (url, req) {
 			var params = Url.match(this.url.regexp, url.pathname),
-				query = queryString.parse(url.query),
+				query = url.query,
 				_paramsRules = this.url.params,
 				_queryRules = this.url.query;
 
@@ -323,10 +323,19 @@ define([
 
 		/**
 		 * Получить URL
-		 * @param {Object} [params]
+		 * @param  {Object} [params]
+		 * @return {string}
 		 */
 		getUrl: function (params) {
 			return this.url.toUrl ? this.url.toUrl(params, this._urlBuilder) : this._urlBuilder(params);
+		},
+
+		/**
+		 * @param  {string} id
+		 * @return {boolean}
+		 */
+		is: function (id) {
+			return this.id === id;
 		}
 	};
 

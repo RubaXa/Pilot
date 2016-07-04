@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function (grunt){
+module.exports = function (grunt) {
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
@@ -48,22 +48,35 @@ module.exports = function (grunt){
 					baseUrl: './',
 					include: 'src/pilot.js',
 					paths: {
-						'Emitter': 'empty:'
+						'Emitter': 'vendors/Emitter'
 					},
 					out: 'Pilot.js',
 					optimize: 'none',
-					'onModuleBundleComplete': function (data) {
-						var fs = require('fs'),
-							amdclean = require('amdclean'),
-							outputFile = data.path;
+					wrap: {
+						start: '(function (define) {',
 
-						fs.writeFileSync(outputFile, amdclean.clean({
-							'filePath': outputFile,
-							'wrap': {
-								start: ';define(["Emitter"], function(Emitter) {',
-								end: '; return src_pilotjs;});'
-							}
-						}));
+						end: `})((function () {
+							var defined = {};
+							var _define = function (name, deps, callback) {
+								var i = deps.length, depName;
+
+								while (i--) {
+									depName = name.split('/').slice(0, -1).join('/');
+									deps[i] = defined[deps[i].replace('./', depName ? depName + '/' : '')];
+								}
+
+								if (name === 'src/pilot.js') {
+									define([], function () {
+										return callback.apply(null, deps);
+									});
+								} else {
+									defined[name] = callback.apply(null, deps);
+								}
+							};
+							_define.amd = true;
+							return _define;
+						})());
+						`
 					}
 				}
 			}
