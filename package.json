@@ -1,6 +1,6 @@
 {
   "name": "pilotjs",
-  "version": "2.0.0-dev.3",
+  "version": "2.0.0-dev.4",
   "devDependencies": {
     "amdclean": "^2.7.0",
     "grunt": "~0.4.0",
