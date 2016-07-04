@@ -889,7 +889,7 @@
 
 		if( !_rhttp.test(url) ){
 			if( '/' == url.charAt(0) ){
-				url = '//' + location.hostname + url;
+				url = '//' + location.host + url;
 			}
 			else {
 				url	= location.pathname.substr(0, location.pathname.lastIndexOf('/') + 1) + url;
@@ -898,7 +898,7 @@
 			if( '//' == url.substr(0, 2) ){
 				url = location.protocol + url;
 			} else {
-				url = location.hostname + url;
+				url = location.host + url;
 			}
 
 			if( !_rhttp.test(url) ){
