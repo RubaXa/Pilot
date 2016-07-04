@@ -1,6 +1,6 @@
 {
 	"name": "pilotjs",
-	"version": "1.6.2",
+	"version": "1.6.3",
 	"devDependencies": {
 		"grunt": "~0.4.0",
 		"grunt-version": "*",
