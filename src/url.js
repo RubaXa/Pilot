@@ -181,7 +181,7 @@ define(['./querystring'], function (/** queryString */queryString) {
 
 			for (var key in this.query) {
 				var value = this.query[key];
-				search.push(encodeURIComponent(key) + (value != '' ? '=' + encodeURIComponent(value) : ''));
+				search.push(encodeURI(key) + (value != '' ? '=' + encodeURIComponent(value) : ''));
 			}
 
 			this.search = search.length ? '?' + search.join('&') : '';
