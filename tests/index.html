@@ -4,11 +4,11 @@
 	<meta charset="utf-8"/>
 	<title>Pilot :: tests</title>
 
-	<!--script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-	<script src="http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.15/require.js"></script>
-
 	<script src="http://code.jquery.com/qunit/qunit-git.js"></script>
-	<link href="http://code.jquery.com/qunit/qunit-git.css" rel="stylesheet"/-->
+	<link href="http://code.jquery.com/qunit/qunit-git.css" rel="stylesheet"/>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.15/require.js"></script>
 
 	<script>
 		if (!window.jQuery) {
@@ -26,33 +26,60 @@
 	<div id="qunit"></div>
 	<div id="qunit-fixture"></div>
 
-
 	<script>
-		if (window.wallaby){
-			wallaby.delayStart();
-		}
-		else {
-			QUnit.config.autostart = false;
+		if (!Function.prototype.bind) {
+			Function.prototype.bind = function (oThis) {
+				if (typeof this !== 'function') {
+					// ближайший аналог внутренней функции
+					// IsCallable в ECMAScript 5
+					throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
+				}
+
+				var aArgs = Array.prototype.slice.call(arguments, 1),
+						fToBind = this,
+						fNOP = function () {
+						},
+						fBound = function () {
+							return fToBind.apply(this instanceof fNOP && oThis
+											? this
+											: oThis,
+									aArgs.concat(Array.prototype.slice.call(arguments)));
+						};
+
+				fNOP.prototype = this.prototype;
+				fBound.prototype = new fNOP();
+
+				return fBound;
+			};
 		}
 
-		function promiseTest(name, callback) {
-			asyncTest(name, function () {
-				callback().then(start, function (err) {
-					ok(false, 'PromiseTest::failed');
-					deepEqual(JSON.stringify(err), '', 'Error');
-					start();
+		QUnit.config.autostart = false;
+
+		QUnit.promiseTest = function promiseTest(name, callback) {
+			QUnit.test(name, function (assert) {
+				var done = assert.async();
+
+				callback(assert).then(done, function (err) {
+					assert.ok(false, 'PromiseTest::failed');
+					assert.deepEqual(JSON.stringify(err), '', 'Error');
+					done();
 				});
 			});
-		}
+		};
 
 		requirejs.config({
+			deps: ['Promise'],
 			baseUrl: '../src/',
 			paths: {
 				tests: '../tests/',
-				Emitter: '/JSSDK/Emitter/Emitter'
+				Promise: '../vendors/Promise',
+				Emitter: '../vendors/Emitter'
 			}
 		});
 
+		require.onError = function (err) {
+			console.log(err);
+		};
 
 		require([
 			'tests/querystring.tests',
@@ -60,11 +87,7 @@
 			'tests/loader.tests',
 			'tests/pilot.tests'
 		], function () {
-			if (window.wallaby) {
-				wallaby.start()
-			} else {
-				QUnit.start();
-			}
+			QUnit.start();
 		});
 	</script>
 

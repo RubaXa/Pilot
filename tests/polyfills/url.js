@@ -14,6 +14,7 @@
 
 	function URLUtils(url) {
 		var anchor = document.createElement("a");
+
 		anchor.href = url;
 
 		return anchor;

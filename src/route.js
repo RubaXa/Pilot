@@ -26,7 +26,10 @@ define([
 				value = target[name];
 
 			if (value === void 0) {
-				target[name] = rule['default'];
+				if (rule['default'] != null) {
+					target[name] = rule['default'];
+				}
+				
 				return true;
 			}
 

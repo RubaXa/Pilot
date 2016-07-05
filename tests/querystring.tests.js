@@ -1,9 +1,9 @@
 define(['querystring'], function (/** queryString */queryString) {
-	module('queryString');
+	QUnit.module('queryString');
 
 
 	// Parser
-	test('parse', function () {
+	QUnit.test('parse', function (assert) {
 		var cases = {
 			'?foo=bar': {foo: 'bar'},
 			'#foo=bar': {foo: 'bar'},
@@ -23,13 +23,13 @@ define(['querystring'], function (/** queryString */queryString) {
 
 
 		Object.keys(cases).forEach(function (search) {
-			deepEqual(queryString.parse(search), cases[search], search);
+			assert.deepEqual(queryString.parse(search), cases[search], search);
 		});
 	});
 
 
 	// Stringify
-	test('stringify', function () {
+	QUnit.test('stringify', function (assert) {
 		var cases = {
 			'null': {'null':null},
 			'undefined': {'undefined':void 0},
@@ -47,7 +47,7 @@ define(['querystring'], function (/** queryString */queryString) {
 
 
 		Object.keys(cases).forEach(function (query) {
-			deepEqual(queryString.stringify(cases[query]), query, query);
+			assert.deepEqual(queryString.stringify(cases[query]), query, query);
 		});
 	});
 });

@@ -4,8 +4,6 @@
   "devDependencies": {
     "amdclean": "^2.7.0",
     "grunt": "~0.4.0",
-    "grunt-babel": "4.0.0",
-    "grunt-contrib-jshint": "0.9.2",
     "grunt-contrib-uglify": "*",
     "grunt-qunit-istanbul": "*",
     "grunt-version": "*"

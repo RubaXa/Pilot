@@ -22,8 +22,8 @@ module.exports = function (grunt) {
 					instrumentedFiles: 'temp/',
 					htmlReport: 'report/coverage',
 					coberturaReport: 'report/',
-					linesThresholdPct: 99,
-					functionsThresholdPct: 100,
+					linesThresholdPct: 90,
+					functionsThresholdPct: 90,
 					branchesThresholdPct: 90,
 					statementsThresholdPct: 90
 				}
@@ -85,15 +85,13 @@ module.exports = function (grunt) {
 
 
 	grunt.loadNpmTasks('grunt-version');
-	//grunt.loadNpmTasks('grunt-babel');
-	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-qunit-istanbul');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-requirejs');
 
 
 	// Тестирование
-	grunt.registerTask('test', ['jshint', 'qunit']);
+	grunt.registerTask('test', ['qunit']);
 
 	// Сборка
 	grunt.registerTask('build', ['requirejs']);

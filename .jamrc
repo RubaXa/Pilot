@@ -1,0 +1,7 @@
+exports.repositories = [
+	{
+		url: "http://dragonballs.dev.mail.ru:5984/jam-packages",
+		search: false
+	}
+//	"http://jamjs.org/repository"
+];

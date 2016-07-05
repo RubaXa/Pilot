@@ -1,12 +1,12 @@
 define(['loader'], function (Loader) {
 	'use strict';
 
-	module('Loader');
+	QUnit.module('Loader');
 
 	var reqX = { route: { id: '#X' } },
 		reqY = { route: { id: '#Y' } };
 
-	test('defaults', function () {
+	QUnit.test('defaults', function (assert) {
 		var loader = new Loader({
 			foo: function () {},
 			bar: {
@@ -14,11 +14,12 @@ define(['loader'], function (Loader) {
 			}
 		});
 
-		deepEqual(loader.defaults(), {foo: void 0, bar: 123});
+		assert.deepEqual(loader.defaults(), {foo: void 0, bar: 123});
 	});
 
 
-	asyncTest('fetch', function () {
+	QUnit.test('fetch', function (assert) {
+		var done = assert.async();
 		var loader = new Loader({
 			foo: function () {
 				return 1
@@ -43,20 +44,21 @@ define(['loader'], function (Loader) {
 
 
 		loader.fetch(reqX).then(function (models) {
-			deepEqual(models, {foo: 1, bar: 2, baz: 3, qux: 6}, '#X');
+			assert.deepEqual(models, {foo: 1, bar: 2, baz: 3, qux: 6}, '#X');
 
 			return loader.fetch(reqY).then(function (models) {
-				deepEqual(models, {foo: 1, bar: 2, baz: -3, qux: -6}, '#Y');
-				start();
+				assert.deepEqual(models, {foo: 1, bar: 2, baz: -3, qux: -6}, '#Y');
+				done();
 			});
 		})['catch'](function () {
-			ok(false, 'fail');
-			start();
+			assert.ok(false, 'fail');
+			done();
 		});
 	});
 
 
-	asyncTest('extend', function () {
+	QUnit.test('extend', function (assert) {
+		var done = assert.async();
 		var loader = new Loader({
 			foo: {
 				value: 0,
@@ -76,24 +78,25 @@ define(['loader'], function (Loader) {
 		});
 
 		return loader.fetch(reqX).then(function (models) {
-			deepEqual(models, {foo: 1, bar: 123});
+			assert.deepEqual(models, {foo: 1, bar: 123});
 
 			return extLoader.fetch(reqY).then(function (models) {
-				deepEqual(models, {foo: 2, bar: 321});
+				assert.deepEqual(models, {foo: 2, bar: 321});
 
 				return loader.fetch(reqY).then(function (models) {
-					deepEqual(models, {foo: 3, bar: 123});
-					start();
+					assert.deepEqual(models, {foo: 3, bar: 123});
+					done();
 				});
 			});
 		})['catch'](function () {
-			ok(false);
-			start();
+			assert.ok(false);
+			done();
 		});
 	});
 
 
-	asyncTest('fetch:error', function () {
+	QUnit.test('fetch:error', function (assert) {
+		var done = assert.async();
 		var loader = new Loader({
 			foo: function () {
 				throw "error";
@@ -101,11 +104,11 @@ define(['loader'], function (Loader) {
 		});
 
 		return loader.fetch(reqX).then(function () {
-			ok(false);
-			start();
+			assert.ok(false);
+			done();
 		})['catch'](function () {
-			ok(true);
-			start();
+			assert.ok(true);
+			done();
 		});
 	});
 });

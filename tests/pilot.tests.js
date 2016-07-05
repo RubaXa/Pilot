@@ -1,5 +1,5 @@
 define(['pilot'], function (Pilot) {
-	module('Pilot');
+	QUnit.module('Pilot');
 
 	var TYPES = {
 		'inbox': 1,
@@ -73,7 +73,8 @@ define(['pilot'], function (Pilot) {
 						validate: function (value) {
 							return value >= 0;
 						},
-						decode: function (value) {
+						decode: function (value, req) {
+							// req.params.type = ID_TYPES[value];
 							return parseInt(value, 10);
 						}
 					}
@@ -94,8 +95,8 @@ define(['pilot'], function (Pilot) {
 	});
 
 
-	test('routes', function () {
-		deepEqual(app.routes.map(function (route) {
+	QUnit.test('routes', function (assert) {
+		assert.deepEqual(app.routes.map(function (route) {
 			return {id: route.id, url: route.url.pattern, group: route.__group__};
 		}), [
 			{"id": "#__root__", "url": "/", "group": true},
@@ -109,38 +110,38 @@ define(['pilot'], function (Pilot) {
 	});
 
 
-	promiseTest('nav', function () {
-		equal(app['#foo'].regions.length, 1);
-		deepEqual(app.model, {});
-		deepEqual(app['#idx'].model, {indexes: void 0});
+	QUnit.promiseTest('nav', function (assert) {
+		assert.equal(app['#foo'].regions.length, 1);
+		assert.deepEqual(app.model, {});
+		assert.deepEqual(app['#idx'].model, {indexes: void 0});
 
 		return app.nav('/').then(function () {
-			equal(app.route.id, '#idx');
-			equal(app.url.href, app.request.href);
-			equal(app.request.path, '/');
+			assert.equal(app.route.id, '#idx');
+			assert.equal(app.url.href, app.request.href);
+			assert.equal(app.request.path, '/');
 
-			ok(app['#idx'].active, '#idx.active');
-			ok(app['#idx'].ok, '#idx.ok');
-			ok(!app['#foo'].active, '#foo.active');
+			assert.ok(app['#idx'].active, '#idx.active');
+			assert.ok(app['#idx'].ok, '#idx.ok');
+			assert.ok(!app['#foo'].active, '#foo.active');
 
-			deepEqual(app.model, {}, 'app.model');
-			deepEqual(app.route.model, {indexes: 123}, 'idx.model');
+			assert.deepEqual(app.model, {}, 'app.model');
+			assert.deepEqual(app.route.model, {indexes: 123}, 'idx.model');
 
 			return app.nav('/xxx/bar').then(function () {
-				equal(app.route.id, '#bar');
-				equal(app.request.path, '/xxx/bar');
+				assert.equal(app.route.id, '#bar');
+				assert.equal(app.request.path, '/xxx/bar');
 
 				return app.nav('/yyy/baz/').then(function () {
-					ok(app['#foo'].active, '#foo.active');
-					equal(app.route.id, '#baz');
-					equal(app['#foo'].regions[0].foo, 'start');
+					assert.ok(app['#foo'].active, '#foo.active');
+					assert.equal(app.route.id, '#baz');
+					assert.equal(app['#foo'].regions[0].foo, 'start');
 
-					deepEqual(app['#idx'].model, {indexes: void 0});
-					deepEqual(app['#foo'].model, {data: 'yyy'});
-					deepEqual(app.route.model, {data: 'yyy', subdata: 'baz'});
+					assert.deepEqual(app['#idx'].model, {indexes: void 0});
+					assert.deepEqual(app['#foo'].model, {data: 'yyy'});
+					assert.deepEqual(app.route.model, {data: 'yyy', subdata: 'baz'});
 
 					return app.nav('/zzz/bar/').then(function () {
-						equal(app['#foo'].regions[0].foo, 'end');
+						assert.equal(app['#foo'].regions[0].foo, 'end');
 					});
 				});
 			});
@@ -148,32 +149,32 @@ define(['pilot'], function (Pilot) {
 	});
 
 
-	test('getUrl', function () {
-		equal(app.getUrl('#folder'), '/');
-		equal(app.getUrl('#folder', {folder: 0}), '/0/');
+	QUnit.test('getUrl', function (assert) {
+		assert.equal(app.getUrl('#folder'), '/');
+		assert.equal(app.getUrl('#folder', {folder: 0}), '/0/');
 
-		equal(app.getUrl('#letters'), '/messages/');
-		equal(app.getUrl('#letters', {type: 'inbox'}), '/messages/inbox/');
-		equal(app.getUrl('#letters', {id: 2}), '/messages/folder/2/');
-		equal(app.getUrl('#letters', 'inbox'), '/messages/inbox/');
-		equal(app.getUrl('#letters', 2), '/messages/folder/2/');
-		equal(app.getUrl('#letters', 0), '/messages/inbox/');
-		equal(app.getUrl('#letters', {id: 0}), '/messages/inbox/');
+		assert.equal(app.getUrl('#letters'), '/messages/');
+		assert.equal(app.getUrl('#letters', {type: 'inbox'}), '/messages/inbox/');
+		assert.equal(app.getUrl('#letters', {id: 2}), '/messages/folder/2/');
+		assert.equal(app.getUrl('#letters', 'inbox'), '/messages/inbox/');
+		assert.equal(app.getUrl('#letters', 2), '/messages/folder/2/');
+		assert.equal(app.getUrl('#letters', 0), '/messages/inbox/');
+		assert.equal(app.getUrl('#letters', {id: 0}), '/messages/inbox/');
 	});
 
 
-	promiseTest('letters', function () {
+	QUnit.promiseTest('letters', function (assert) {
 		return app.go('#letters', {type: 'inbox'}).then(function () {
-			deepEqual(app.route.params, {id: 1, type: 'inbox'});
+			assert.deepEqual(app.route.params, {id: 1, type: 'inbox'}, 'id + type');
 
 			return app.go('#letters', {id: 2}).then(function () {
-				deepEqual(app.route.params, {id: 2});
+				assert.deepEqual(app.route.params, {id: 2}, 'id');
 
 				return app.go('#letters', {id: 'str'}).then(function () {
-					ok(false, 'catch')
+					assert.ok(false, 'catch')
 				}, function (err) {
-					equal(err.code, 404);
-					deepEqual(app.route.params, {id: 2});
+					assert.equal(err.code, 404);
+					assert.deepEqual(app.route.params, {id: 2}, '404');
 				});
 			});
 		});

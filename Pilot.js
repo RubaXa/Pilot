@@ -557,37 +557,40 @@ define('src/url',['./querystring'], function (/** queryString */queryString) {
 
 		/**
 		 * Set query params
-		 * @param   {object}       query
-		 * @param   {string|array} [remove]   if `true`, clear the current `query` and set new
+		 * @param   {object}  query
+		 * @param   {array}   [remove]   if `true`, clear the current `query` and set new
 		 * @returns {Url}
 		 */
 		setQuery: function (query, remove) {
-			var query = this.query,
-				key;
+			var currentQuery = this.query;
 
-			query = parseQueryString(query);
+			if (typeof query === 'string'){
+				query = parseQueryString(query);
+			}
 
 			if (remove === true) {
 				this.query = query;
 			}
 			else {
-				if (query !== void 0) {
-					for (key in query) {
-						if (query[key] === null) {
-							delete query[key];
-						} else {
-							query[key] = query[key];
+				if (query != null) {
+					for (var key in query) {
+						if (query.hasOwnProperty(key)) {
+							if (query[key] == null) {
+								delete currentQuery[key];
+							} else {
+								currentQuery[key] = query[key];
+							}
 						}
 					}
 				}
 
 				if (remove) {
-					if (typeof remove === 'string') {
-						remove = remove.split('&');
+					if (!(remove instanceof Array)) {
+						remove = [remove];
 					}
 
 					remove.forEach(function (name) {
-						delete query[name];
+						delete currentQuery[name];
 					});
 				}
 			}
@@ -601,7 +604,7 @@ define('src/url',['./querystring'], function (/** queryString */queryString) {
 		 * @param   {object} query
 		 * @returns {Url}
 		 */
-		addQuery: function (query) {
+		addToQuery: function (query) {
 			return this.setQuery(query);
 		},
 
@@ -611,13 +614,22 @@ define('src/url',['./querystring'], function (/** queryString */queryString) {
 		 * @param   {string|array}  query
 		 * @returns {Url}
 		 */
-		removeQuery: function (query) {
+		removeFromQuery: function (query) {
 			return this.setQuery(void 0, query);
 		},
 
 
 		/** @returns {Url} */
 		update: function () {
+			var search = [];
+
+			for (var key in this.query) {
+				var value = this.query[key];
+				search.push(encodeURIComponent(key) + (value != '' ? '=' + encodeURIComponent(value) : ''));
+			}
+
+			this.search = search.length ? '?' + search.join('&') : '';
+
 			this.url = this.href = (
 				this.protocol + this.protocolSeparator +
 				(this.username ? encodeURIComponent(this.username) + (this.password ? ':' + encodeURIComponent(this.password) : '') + '@' : '') +
@@ -987,7 +999,10 @@ define('src/route',[
 				value = target[name];
 
 			if (value === void 0) {
-				target[name] = rule['default'];
+				if (rule['default'] != null) {
+					target[name] = rule['default'];
+				}
+				
 				return true;
 			}
 
