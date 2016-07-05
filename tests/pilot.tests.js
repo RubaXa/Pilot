@@ -179,4 +179,23 @@ define(['pilot'], function (Pilot) {
 			});
 		});
 	});
+
+	QUnit.promiseTest('search/query', function (assert) {
+		var query;
+		var app = Pilot.create({
+			model: {
+				results: function (req) {
+					query = req.query;
+				}
+			},
+
+			'#search': {
+				url: '/search/'
+			}
+		});
+
+		return app.nav('/search/?find=foo').then(function () {
+			assert.deepEqual(query, {find: 'foo'});
+		});
+	});
 });
