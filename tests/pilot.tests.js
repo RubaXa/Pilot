@@ -192,13 +192,7 @@ define(['pilot'], function (Pilot) {
 			'#index': {
 				url: {
 					pattern: '/:folder',
-					params: {
-						folder: {
-							validate: function (value) {
-								return value !== 'search';
-							}
-						}
-					}
+					params: {folder: {validate: function (value) { return value !== 'search'; }}}
 				}
 			},
 
