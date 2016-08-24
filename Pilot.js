@@ -1782,7 +1782,9 @@
 	if( typeof define === "function" && define.amd ){
 		define(function (){ return Router; });
 	}
-	else {
+	else if (module && module.exports) {
+		module.exports = Router;
+	} else {
 		window["Pilot"] = Router;
 	}
 
