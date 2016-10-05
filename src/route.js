@@ -11,6 +11,7 @@ define([
 ) {
 	'use strict';
 
+	var R_SPACE = /\s+/;
 
 	/**
 	 * Обработка параметров url согласно правилам
@@ -338,6 +339,17 @@ define([
 		 * @return {boolean}
 		 */
 		is: function (id) {
+			if (id.indexOf(' ') > -1) {
+				var list = id.split(R_SPACE);
+				var idx = list.length;
+
+				while (idx--) {
+					if (list[idx] === this.id) {
+						return true;
+					}
+				}
+			}
+
 			return this.id === id;
 		}
 	};

@@ -625,7 +625,7 @@ define('src/url',['./querystring'], function (/** queryString */queryString) {
 
 			for (var key in this.query) {
 				var value = this.query[key];
-				search.push(encodeURIComponent(key) + (value != '' ? '=' + encodeURIComponent(value) : ''));
+				search.push(encodeURI(key) + (value != '' ? '=' + encodeURIComponent(value) : ''));
 			}
 
 			this.search = search.length ? '?' + search.join('&') : '';
@@ -984,6 +984,7 @@ define('src/route',[
 ) {
 	'use strict';
 
+	var R_SPACE = /\s+/;
 
 	/**
 	 * Обработка параметров url согласно правилам
@@ -1311,6 +1312,17 @@ define('src/route',[
 		 * @return {boolean}
 		 */
 		is: function (id) {
+			if (id.indexOf(' ') > -1) {
+				var list = id.split(R_SPACE);
+				var idx = list.length;
+
+				while (idx--) {
+					if (list[idx] === this.id) {
+						return true;
+					}
+				}
+			}
+
 			return this.id === id;
 		}
 	};
@@ -1576,12 +1588,12 @@ define('src/pilot.js',[
 					_promise['catch'](function (err) {
 						if (currentRoute) {
 							// todo: Найти ближайшую 404
-							currentRoute.trigger(err.code + '', [err, req]);
-							currentRoute.trigger('error', [err, req]);
+							currentRoute.trigger(err.code + '', [req, err]);
+							currentRoute.trigger('error', [req, err]);
 						}
 
-						_this.trigger('route-fail', [err, req]);
-						_this.trigger('route-end', [req]);
+						_this.trigger('route-fail', [req, currentRoute, err]);
+						_this.trigger('route-end', [req, currentRoute]);
 					});
 				}
 

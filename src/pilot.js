@@ -180,12 +180,12 @@ define([
 					_promise['catch'](function (err) {
 						if (currentRoute) {
 							// todo: Найти ближайшую 404
-							currentRoute.trigger(err.code + '', [err, req]);
-							currentRoute.trigger('error', [err, req]);
+							currentRoute.trigger(err.code + '', [req, err]);
+							currentRoute.trigger('error', [req, err]);
 						}
 
-						_this.trigger('route-fail', [err, req]);
-						_this.trigger('route-end', [req]);
+						_this.trigger('route-fail', [req, currentRoute, err]);
+						_this.trigger('route-end', [req, currentRoute]);
 					});
 				}
 
