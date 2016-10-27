@@ -232,10 +232,13 @@
 			this.historyIdx	= 0;
 
 			if( options.useHistory ){
-				$(window).bind('popstate hashchange', _bind(this, function (){
+				var events = (Router.pushState && history.pushState) ? 'popstate' : 'hashchange';
+				$(window).bind(events, _bind(this, function (){
 					this.nav( Router.getLocation() );
 				}));
 			}
+
+
 
 			if( options.profile ){
 				_profilerWrap(this, 'emit', true);
