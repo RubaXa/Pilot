@@ -1779,7 +1779,7 @@
 
 
 	// Export
-	Router.version	= '1.6.1';
+	Router.version	= '1.7.0';
 	window.Pilot	= Router;
 
 	if( typeof define === "function" && define.amd ){
