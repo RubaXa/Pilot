@@ -887,6 +887,10 @@ Set a new location.
 <a name="changelog"></a>
 ## Changelog
 
+### 1.7.0
+
+- Event `hashchange` does not listen, if `Router.pushState` is true
+
 ### 1.6.0
 <ul>
 	<li>Removed depending on jQuery</li>
