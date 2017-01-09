@@ -22,10 +22,10 @@ module.exports = function (grunt) {
 					instrumentedFiles: 'temp/',
 					htmlReport: 'report/coverage',
 					coberturaReport: 'report/',
-					linesThresholdPct: 90,
-					functionsThresholdPct: 90,
-					branchesThresholdPct: 90,
-					statementsThresholdPct: 90
+					linesThresholdPct: 80,
+					functionsThresholdPct: 80,
+					branchesThresholdPct: 70,
+					statementsThresholdPct: 80
 				}
 			}
 		},

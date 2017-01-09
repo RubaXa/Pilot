@@ -308,7 +308,7 @@
 
 
 	// Версия модуля
-	Emitter.version = "0.3.0";
+	Emitter.version = "2.0.0-dev.6";
 
 
 	// exports
@@ -1661,7 +1661,7 @@ define('src/pilot.js',[
 
 	Emitter.apply(Pilot.prototype);
 
-	Pilot.version = '2.0.0';
+	Pilot.version = '2.0.0-dev.6';
 	return Pilot;
 });
 

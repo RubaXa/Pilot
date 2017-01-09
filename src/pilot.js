@@ -142,9 +142,10 @@ define([
 		/**
 		 * Навигация по маршруту
 		 * @param   {string|URL|Pilot.Request}  href
+		 * @param   {Object}  [detail]
 		 * @returns {Promise}
 		 */
-		nav: function (href) {
+		nav: function (href, detail) {
 			var req,
 				url = new URL(href.toString(), location),
 				_this = this,
@@ -152,10 +153,13 @@ define([
 				_promise = _this._promise,
 				currentRoute;
 
+
 			// URL должен отличаться от активного
 			if (_this.activeUrl.href !== url.href) {
 				// Создаем объект реквеста и дальше с ним работаем
 				req = new Request(url, _this.request.href, _this);
+
+				detail = detail || {};
 
 				// Находим нужный нам маршрут
 				currentRoute = routes.filter(function (/** Pilot.Route */item) {
@@ -167,7 +171,7 @@ define([
 				_this.activeRequest = req;
 				_this.activeRoute = currentRoute;
 
-				_this.trigger('before-route', [req]);
+				_this.trigger('before-route', [req, detail]);
 
 
 				if (!_this._promise) {
@@ -180,12 +184,12 @@ define([
 					_promise['catch'](function (err) {
 						if (currentRoute) {
 							// todo: Найти ближайшую 404
-							currentRoute.trigger(err.code + '', [req, err]);
-							currentRoute.trigger('error', [req, err]);
+							currentRoute.trigger(err.code + '', [req, err, detail]);
+							currentRoute.trigger('error', [req, err, detail]);
 						}
 
-						_this.trigger('route-fail', [req, currentRoute, err]);
-						_this.trigger('route-end', [req, currentRoute]);
+						_this.trigger('route-fail', [req, currentRoute, err, detail]);
+						_this.trigger('route-end', [req, currentRoute, detail]);
 					});
 				}
 
@@ -214,8 +218,8 @@ define([
 									route.handling(url, req.clone(), currentRoute, model);
 								});
 
-								_this.trigger('route', [req, currentRoute]);
-								_this.trigger('route-end', [req, currentRoute]);
+								_this.trigger('route', [req, currentRoute, detail]);
+								_this.trigger('route-end', [req, currentRoute, detail]);
 
 								_this._promise = null;
 								_this._resolve();
@@ -237,6 +241,79 @@ define([
 			}
 
 			return _promise || resolvedPromise;
+		},
+
+		/**
+		 * Слушать события
+		 * @param {HTMLElement} target
+		 * @param {{logger:object, autoStart: boolean, filter: Function}} options
+		 */
+		listenFrom: function (target, options) {
+			var _this = this;
+			var logger = options.logger;
+			var filter = options.filter;
+			var popstateNav = function () {
+				_this.nav(location.href, {initiator: 'popstate'});
+			};
+
+			// Корректировка url, если location не воспадает
+			_this.on('routeend', function (evt, req) {
+				var href = req.toString();
+
+				if (location.toString() !== href) {
+					logger && logger.add('router.pushState', {href: href});
+					history.pushState(null, null, href);
+				}
+			});
+
+			// Слушаем `back`
+			window.addEventListener('popstate', function () {
+				if (logger) {
+					logger.call('router.nav.popstate', {href: location.href}, popstateNav);
+				} else {
+					popstateNav();
+				}
+			}, false);
+
+			// Перехватываем действия пользователя
+			target.addEventListener('click', function pilotClickListener(evt) {
+				var el = evt.target;
+				var level = 0;
+				var MAX_LEVEL = 10;
+
+				do {
+					var url = el.href;
+
+					if (
+						url &&
+						(location.hostname === el.hostname && !evt.isDefaultPrevented()) &&
+						(!filter || filter(url))
+					) {
+						evt.preventDefault();
+						var clickNav = function () {
+							_this.nav(url, {initiator: 'click'});
+							history.pushState(null, null, url);
+						};
+
+						if (logger) {
+							logger.call('router.nav.click', {href: url}, clickNav);
+						} else {
+							clickNav();
+						}
+						break;
+					}
+				} while ((el = el.parentNode) && (++level < MAX_LEVEL));
+			});
+
+			if (options.autoStart) {
+				if (logger) {
+					logger.call('router.nav.initial', {href: location.href}, function () {
+						_this.nav(location.href);
+					});
+				} else {
+					_this.nav(location.href);
+				}
+			}
 		}
 	};
 
@@ -249,7 +326,6 @@ define([
 	Pilot.create = function (sitemap) {
 		return new Pilot(sitemap);
 	};
-
 
 	Emitter.apply(Pilot.prototype);
 
