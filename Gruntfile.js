@@ -100,5 +100,5 @@ module.exports = function (grunt) {
 	grunt.registerTask('min', ['uglify']);
 
 	// Default task.
-	grunt.registerTask('default', ['version', 'test']);
+	grunt.registerTask('default', ['version', 'test', 'build', 'min']);
 };
