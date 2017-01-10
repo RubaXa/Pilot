@@ -204,11 +204,14 @@
 		 * Распространить `Emitter.Event`
 		 * @param   {string}  type    тип события
 		 * @param   {Array}   [args]  аргумент или массив аргументов
+		 * @param   {*}   [details]  детали объекта события
 		 * @returns {Emitter}
 		 */
-		trigger: function (type, args) {
+		trigger: function (type, args, details) {
 			var evt = new Event(type);
+			
 			evt.target = evt.target || this;
+			evt.details = details;
 			evt.result = this.emit(type.type || type, [evt].concat(args));
 
 			return this;
@@ -1550,10 +1553,10 @@ define('src/pilot.js',[
 		/**
 		 * Навигация по маршруту
 		 * @param   {string|URL|Pilot.Request}  href
-		 * @param   {Object}  [detail]
+		 * @param   {Object}  [details]
 		 * @returns {Promise}
 		 */
-		nav: function (href, detail) {
+		nav: function (href, details) {
 			var req,
 				url = new URL(href.toString(), location),
 				_this = this,
@@ -1567,7 +1570,7 @@ define('src/pilot.js',[
 				// Создаем объект реквеста и дальше с ним работаем
 				req = new Request(url, _this.request.href, _this);
 
-				detail = detail || {};
+				details = details || {};
 
 				// Находим нужный нам маршрут
 				currentRoute = routes.filter(function (/** Pilot.Route */item) {
@@ -1579,7 +1582,7 @@ define('src/pilot.js',[
 				_this.activeRequest = req;
 				_this.activeRoute = currentRoute;
 
-				_this.trigger('before-route', [req, detail]);
+				_this.trigger('before-route', [req], details);
 
 
 				if (!_this._promise) {
@@ -1592,12 +1595,12 @@ define('src/pilot.js',[
 					_promise['catch'](function (err) {
 						if (currentRoute) {
 							// todo: Найти ближайшую 404
-							currentRoute.trigger(err.code + '', [req, err, detail]);
-							currentRoute.trigger('error', [req, err, detail]);
+							currentRoute.trigger(err.code + '', [req, err], details);
+							currentRoute.trigger('error', [req, err], details);
 						}
 
-						_this.trigger('route-fail', [req, currentRoute, err, detail]);
-						_this.trigger('route-end', [req, currentRoute, detail]);
+						_this.trigger('route-fail', [req, currentRoute, err], details);
+						_this.trigger('route-end', [req, currentRoute], details);
 					});
 				}
 
@@ -1626,8 +1629,8 @@ define('src/pilot.js',[
 									route.handling(url, req.clone(), currentRoute, model);
 								});
 
-								_this.trigger('route', [req, currentRoute, detail]);
-								_this.trigger('route-end', [req, currentRoute, detail]);
+								_this.trigger('route', [req, currentRoute], details);
+								_this.trigger('route-end', [req, currentRoute], details);
 
 								_this._promise = null;
 								_this._resolve();
@@ -1716,10 +1719,10 @@ define('src/pilot.js',[
 			if (options.autoStart) {
 				if (logger) {
 					logger.call('router.nav.initial', {href: location.href}, function () {
-						_this.nav(location.href);
+						_this.nav(location.href, {initiator: 'initial'});
 					});
 				} else {
-					_this.nav(location.href);
+					_this.nav(location.href, {initiator: 'initial'});
 				}
 			}
 		}

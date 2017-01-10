@@ -204,11 +204,14 @@
 		 * Распространить `Emitter.Event`
 		 * @param   {string}  type    тип события
 		 * @param   {Array}   [args]  аргумент или массив аргументов
+		 * @param   {*}   [details]  детали объекта события
 		 * @returns {Emitter}
 		 */
-		trigger: function (type, args) {
+		trigger: function (type, args, details) {
 			var evt = new Event(type);
+			
 			evt.target = evt.target || this;
+			evt.details = details;
 			evt.result = this.emit(type.type || type, [evt].concat(args));
 
 			return this;
