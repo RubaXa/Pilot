@@ -280,16 +280,16 @@ define([
 				var el = evt.target;
 				var level = 0;
 				var MAX_LEVEL = 10;
-				var hostnameRegExp = new RegExp(`^` + location.protocol + '//' + location.hostname);
+				var hostnameRegExp = new RegExp('^' + location.protocol + '//' + location.hostname);
 
 				do {
 					var url = el.href;
 
 					if (
-						url 
-						&& hostnameRegExp.test(url)
-						&& !evt.isDefaultPrevented() 
-						&&(!filter || filter(url))
+						url &&
+						hostnameRegExp.test(url) &&
+						!evt.isDefaultPrevented() &&
+						(!filter || filter(url))
 					) {
 						evt.preventDefault();
 						var clickNav = function () {
