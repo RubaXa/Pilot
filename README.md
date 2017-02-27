@@ -14,7 +14,11 @@ const router = Pilot.create({
 	}
 });
 
-router.nav('/').then(() => ...);
+// Запускаем перехват ссылок и history api
+router.listenFrom(document, {autoStart: true});
+
+// Где-то в коде
+router.go('#route-id').then(() => ...);
 ```
 
 ---
