@@ -29,6 +29,7 @@ define(['./url', './querystring'], function (/** URL */URL, /** queryString */qu
 		this.route = router && router.route || {};
 		this.router = router;
 		this.referrer = referrer;
+		this.redirectHref = null;
 	};
 
 
@@ -46,6 +47,14 @@ define(['./url', './querystring'], function (/** URL */URL, /** queryString */qu
 
 		is: function (id) {
 			return !!(this.route && (this.route.id == id));
+		},
+
+		redirectTo: function (href, interrupt) {
+			this.redirectHref = href;
+
+			if (interrupt) {
+				throw new Request(href, this.href, this.router);
+			}
 		},
 
 		toString: function () {

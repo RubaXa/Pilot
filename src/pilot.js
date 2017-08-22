@@ -218,19 +218,36 @@ define([
 									route.handling(url, req.clone(), currentRoute, model);
 								});
 
-								_this.trigger('route', [req, currentRoute], details);
-								_this.trigger('route-end', [req, currentRoute], details);
+								if (!req.redirectHref) {
+									_this.trigger('route', [req, currentRoute], details);
 
-								_this._promise = null;
-								_this._resolve();
+									if (!req.redirectHref) {
+										_this.trigger('route-end', [req, currentRoute], details);
+
+										if (!req.redirectHref) {
+											_this._promise = null;
+											_this._resolve();
+
+											return; // exit
+										}
+									}
+								}
+
+								_this.useHistory && history.replaceState(null, null, req.redirectHref);
+								_this.nav(req.redirectHref);
 							}
 						});
 					})['catch'](function (err) {
 						console.warn(err);
 
-						// todo: Редирект!
 						// Обработка ошибки
 						if (_this.activeUrl === url) {
+							if (err instanceof Request) {
+								_this.useHistory && history.replaceState(null, null, err.href);
+								_this.nav(err.href);
+								return;
+							}
+
 							_this._promise = null;
 							_this._reject(Status.from(err));
 
@@ -252,11 +269,13 @@ define([
 			var _this = this;
 			var logger = options.logger;
 			var filter = options.filter;
-			var popstateNav = function () {
+			var popStateNav = function () {
 				_this.nav(location.href, {initiator: 'popstate'});
 			};
 
-			// Корректировка url, если location не воспадает
+			_this.useHistory = true;
+
+			// Корректировка url, если location не совпадает
 			_this.on('routeend', function (evt, req) {
 				var href = req.toString();
 
@@ -269,9 +288,9 @@ define([
 			// Слушаем `back`
 			window.addEventListener('popstate', function () {
 				if (logger) {
-					logger.call('router.nav.popstate', {href: location.href}, popstateNav);
+					logger.call('router.nav.popstate', {href: location.href}, popStateNav);
 				} else {
-					popstateNav();
+					popStateNav();
 				}
 			}, false);
 
