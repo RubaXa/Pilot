@@ -1,4 +1,4 @@
-define(['./match'], function (match) {
+define(['./match', 'Emitter'], function (match, Emitter) {
 	'use strict';
 
 
@@ -13,19 +13,35 @@ define(['./match'], function (match) {
 		return model;
 	};
 
+	/**
+	 * @typedef  {object} LoaderOptions
+	 * @property {boolean}  persist
+	 * @property {Function} processing
+	 */
 
 
 	/**
 	 * @class Pilot.Loader
+	 * @extends Emitter
 	 * @constructs Pilot.Loader
 	 * @param {Object} models
+	 * @param {LoaderOptions} [options]
 	 * @constructor
 	 */
-	var Loader = function (models) {
+	var Loader = function (models, options) {
+		if (models instanceof Loader) {
+			return models;
+		}
+
 		this.models = models = (models || {});
 		this.names = Object.keys(models);
 
 		this._index = {};
+		this._options = options || {};
+
+		this._lastReq = null;
+		this._fetchPromises = {};
+
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
 		}, this);
@@ -48,43 +64,73 @@ define(['./match'], function (match) {
 
 
 		fetch: function (req) {
-			var _index = this._index,
+			if (req == null) {
+				req = this._lastReq;
+			}
 
-				names = this.names,
-				models = {},
-				promises = [],
+			this._lastReq = req;
 
-				waitFor = function (name) {
-					var idx = models[name],
-						model = _index[name];
+			var _index = this._index;
+			var _options = this._options;
+			var _persistKey = req.toString();
 
-					if (idx === void 0) {
-						idx = new Promise(function (resolve) {
-							if (model.fetch && model.match(req.route.id, req)) {
-								resolve(model.fetch(req, waitFor));
-							}
-							else {
-								resolve(model.defaults);
-							}
-						});
+			var names = this.names;
+			var models = {};
+			var promises = [];
+			var waitFor = function (name) {
+				var idx = models[name];
+				var model = _index[name];
 
-						idx = promises.push(idx) - 1;
-						models[name] = idx;
-					}
+				if (idx === void 0) {
+					idx = new Promise(function (resolve) {
+						if (model.fetch && model.match(req.route.id, req)) {
+							resolve(model.fetch(req, waitFor));
+						} else {
+							resolve(model.defaults);
+						}
+					});
 
-					return promises[idx];
-				};
+					idx = promises.push(idx) - 1;
+					models[name] = idx;
+				}
+
+				return promises[idx];
+			};
+
+			if (_options.persist && this._fetchPromises[_persistKey]) {
+				return this._fetchPromises[_persistKey];
+			}
+
+			this.emit('before-fetch', [req]);
 
 			// Загружаем все модели
 			names.forEach(waitFor);
 
-			return Promise.all(promises).then(function (results) {
+			var _promise = Promise.all(promises).then(function (results) {
+				delete this._fetchPromises[_persistKey];
+
 				names.forEach(function (name) {
-					models[name] = results[models[name]];
+					var model = _index[name];
+					var value = results[models[name]];
+
+					if (model.reaction) {
+						value = model.reaction(value, model)
+					}
+
+					models[name] = value;
 				});
+
+				_options.processing && (models = _options.processing(req, models));
+				this.emit('fetch', [req, models]);
 
 				return models;
 			});
+
+			if (_options.persist) {
+				this._fetchPromises[_persistKey] = _promise;
+			}
+
+			return _promise;
 		},
 
 
@@ -117,5 +163,6 @@ define(['./match'], function (match) {
 
 
 	// Export
+	Emitter.apply(Loader.prototype);
 	return Loader;
 });

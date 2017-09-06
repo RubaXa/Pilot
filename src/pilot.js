@@ -80,7 +80,10 @@ define([
 					_prepareRoute(options);
 				}
 			});
-		})({'#__root__': map, model: new Loader(map.model) });
+		})({
+			'#__root__': map,
+			model: new Loader(map.model)
+		});
 
 
 		this.model = map.model.defaults();
@@ -351,6 +354,7 @@ define([
 
 	Emitter.apply(Pilot.prototype);
 
+	Pilot.Loader = Loader;
 	Pilot.version = '2.0.0';
 	return Pilot;
 });
