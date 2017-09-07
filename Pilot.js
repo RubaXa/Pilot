@@ -792,7 +792,7 @@ define('src/match',[], function () {
 	};
 });
 
-define('src/loader',['./match', 'Emitter'], function (match, Emitter) {
+define('src/loader',['./match'], function (match, Emitter) {
 	'use strict';
 
 
@@ -867,6 +867,7 @@ define('src/loader',['./match', 'Emitter'], function (match, Emitter) {
 			var _index = this._index;
 			var _options = this._options;
 			var _persistKey = req.toString();
+			var _fetchPromises = this._fetchPromises;
 
 			var names = this.names;
 			var models = {};
@@ -891,37 +892,27 @@ define('src/loader',['./match', 'Emitter'], function (match, Emitter) {
 				return promises[idx];
 			};
 
-			if (_options.persist && this._fetchPromises[_persistKey]) {
-				return this._fetchPromises[_persistKey];
+			if (_options.persist && _fetchPromises[_persistKey]) {
+				return _fetchPromises[_persistKey];
 			}
-
-			this.emit('before-fetch', [req]);
 
 			// Загружаем все модели
 			names.forEach(waitFor);
 
 			var _promise = Promise.all(promises).then(function (results) {
-				delete this._fetchPromises[_persistKey];
+				delete _fetchPromises[_persistKey];
 
 				names.forEach(function (name) {
-					var model = _index[name];
-					var value = results[models[name]];
-
-					if (model.reaction) {
-						value = model.reaction(value, model)
-					}
-
-					models[name] = value;
+					models[name] = results[models[name]];
 				});
 
 				_options.processing && (models = _options.processing(req, models));
-				this.emit('fetch', [req, models]);
 
 				return models;
 			});
 
 			if (_options.persist) {
-				this._fetchPromises[_persistKey] = _promise;
+				_fetchPromises[_persistKey] = _promise;
 			}
 
 			return _promise;
@@ -957,7 +948,6 @@ define('src/loader',['./match', 'Emitter'], function (match, Emitter) {
 
 
 	// Export
-	Emitter.apply(Loader.prototype);
 	return Loader;
 });
 
@@ -1540,7 +1530,7 @@ define('src/pilot.js',[
 					options.parentId = map.id;
 
 					options.url = _normalizeRouteUrl(options.url, map.url);
-					options.model = map.model.extend(options.model);
+					options.model = options.model ? map.model.extend(options.model) : map.model;
 					options.access = options.access || map.access;
 
 					routes.push(options);

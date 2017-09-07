@@ -73,7 +73,7 @@ define([
 					options.parentId = map.id;
 
 					options.url = _normalizeRouteUrl(options.url, map.url);
-					options.model = map.model.extend(options.model);
+					options.model = options.model ? map.model.extend(options.model) : map.model;
 					options.access = options.access || map.access;
 
 					routes.push(options);
