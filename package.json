@@ -14,7 +14,9 @@
   "description": "Multifunction JavaScript router.",
   "main": "Pilot.js",
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test",
+    "build": "grunt build",
+    "prepublish": "npm test && npm run build"
   },
   "repository": {
     "type": "git",

@@ -1,4 +1,4 @@
-define(['loader'], function (Loader) {
+define(['../src/loader'], function (Loader) {
 	'use strict';
 
 	QUnit.module('Loader');

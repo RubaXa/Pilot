@@ -19,6 +19,8 @@
 	<div id="qunit-fixture"></div>
 
 	<script>
+		define('qunit', [], function () { return QUnit; });
+
 		if (!Function.prototype.bind) {
 			Function.prototype.bind = function (oThis) {
 				if (typeof this !== 'function') {
@@ -61,11 +63,10 @@
 
 		requirejs.config({
 			deps: ['Promise'],
-			baseUrl: '../src/',
+			baseUrl: window.location.pathname.split('/').slice(0, -2).join('/'),
 			paths: {
-				tests: '../tests/',
-				Promise: '../vendors/Promise',
-				Emitter: '../vendors/Emitter'
+				Promise: 'vendors/Promise',
+				Emitter: 'vendors/Emitter'
 			}
 		});
 

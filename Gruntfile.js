@@ -19,7 +19,7 @@ module.exports = function (grunt) {
 				'--web-security': 'no',
 				coverage: {
 					src: ['<%=jshint.all%>'],
-					instrumentedFiles: 'temp/',
+					instrumentedFiles: '/tmp/',
 					htmlReport: 'report/coverage',
 					coberturaReport: 'report/',
 					linesThresholdPct: 80,

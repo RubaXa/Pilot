@@ -1,4 +1,4 @@
-define(['url', './urls'], function (Url, urls) {
+define(['../src/url', './urls'], function (Url, urls) {
 	QUnit.module('Url');
 
 	// https://developer.mozilla.org/en-US/docs/Web/API/URLUtils

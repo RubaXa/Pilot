@@ -1,4 +1,4 @@
-define(['querystring'], function (/** queryString */queryString) {
+define(['../src/querystring'], function (/** queryString */queryString) {
 	QUnit.module('queryString');
 
 

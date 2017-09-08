@@ -1,11 +1,10 @@
-define(['pilot'], function (Pilot) {
+define(['../src/pilot'], function (Pilot) {
 	QUnit.module('Pilot');
 
 	var TYPES = {
 		'inbox': 1,
 		'spam': 2
 	};
-
 
 	var app = window.app = Pilot.create({
 		'#idx': {
@@ -94,7 +93,6 @@ define(['pilot'], function (Pilot) {
 		}
 	});
 
-
 	QUnit.test('routes', function (assert) {
 		assert.deepEqual(app.routes.map(function (route) {
 			return {id: route.id, url: route.url.pattern, group: route.__group__};
@@ -108,7 +106,6 @@ define(['pilot'], function (Pilot) {
 			{"id": "#letters", "url": "/messages/(:type|folder/:id)?", "group": false}
 		], 'routes');
 	});
-
 
 	QUnit.promiseTest('nav', function (assert) {
 		assert.equal(app['#foo'].regions.length, 1);
@@ -148,7 +145,6 @@ define(['pilot'], function (Pilot) {
 		});
 	});
 
-
 	QUnit.test('getUrl', function (assert) {
 		assert.equal(app.getUrl('#folder'), '/');
 		assert.equal(app.getUrl('#folder', {folder: 0}), '/0/');
@@ -164,11 +160,10 @@ define(['pilot'], function (Pilot) {
 	});
 
 	QUnit.promiseTest('getUrl: inherit query', function (assert) {
-		return app.nav('/?foo&bar=Y').then(() => {
+		return app.nav('/?foo&bar=Y').then(function () {
 			assert.equal(app.getUrl('#letters', {}, 'inherit'), '/messages/?foo&bar=Y');
 		});
 	});
-
 
 	QUnit.promiseTest('letters', function (assert) {
 		return app.go('#letters', {type: 'inbox'}).then(function () {
