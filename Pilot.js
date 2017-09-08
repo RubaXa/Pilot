@@ -311,7 +311,7 @@
 
 
 	// Версия модуля
-	Emitter.version = "2.0.1";
+	Emitter.version = "0.3.0";
 
 
 	// exports
@@ -358,9 +358,8 @@ define('src/querystring',[], function () {
 	}
 
 
-
 	/**
-	 * @module queryString
+	 * @module Pilot.queryString
 	 */
 	var queryString = /** @lends queryString */{
 		/**
@@ -388,7 +387,7 @@ define('src/querystring',[], function () {
 					name = pair.shift().replace('[]', '');
 					val = pair.join('=');
 
-					if (val === void 0){
+					if (val === void 0) {
 						val = '';
 					}
 					else {
@@ -401,8 +400,6 @@ define('src/querystring',[], function () {
 					}
 
 					if (name) {
-
-
 						if (query[name] === void 0) {
 							query[name] = val;
 						}
@@ -560,8 +557,8 @@ define('src/url',['./querystring'], function (/** queryString */queryString) {
 
 		/**
 		 * Set query params
-		 * @param   {object}  query
-		 * @param   {array}   [remove]   if `true`, clear the current `query` and set new
+		 * @param   {object|string}  query
+		 * @param   {array|true}   [remove]   if `true`, clear the current `query` and set new
 		 * @returns {Url}
 		 */
 		setQuery: function (query, remove) {
@@ -1062,6 +1059,10 @@ define('src/route',[
 		});
 	};
 
+	var _cleanUrl = function (url) {
+		return url.replace(/\/+$/, '/');
+	};
+
 
 	/**
 	 * Преобразование образца маршрута в функцию генерации URL
@@ -1115,7 +1116,15 @@ define('src/route',[
 		}
 
 		/* jshint evil:true */
-		return new Function('params', code += '/"; return url.replace(/\\/+$/, "/");');
+		return new Function(
+			'cleanUrl, stringify',
+			'return function urlBuilder(params, query) {\n' + code + '/";' +
+			'  return cleanUrl(url) + (query ? "?" + stringify(query) : "");' +
+			'}'
+		)(
+			_cleanUrl,
+			queryString.stringify
+		);
 	};
 
 
@@ -1350,10 +1359,15 @@ define('src/route',[
 		/**
 		 * Получить URL
 		 * @param  {Object} [params]
+		 * @param  {Object|'inherit'} [query]
 		 * @return {string}
 		 */
-		getUrl: function (params) {
-			return this.url.toUrl ? this.url.toUrl(params, this._urlBuilder) : this._urlBuilder(params);
+		getUrl: function (params, query) {
+			if (query === 'inherit') {
+				query = this.router.request.query;
+			}
+
+			return this.url.toUrl ? this.url.toUrl(params, query, this._urlBuilder) : this._urlBuilder(params, query);
 		},
 
 		/**
@@ -1455,6 +1469,118 @@ define('src/status',[], function () {
 	return Status;
 });
 
+define('src/queryString',[], function () {
+	'use strict';
+
+	var encodeURIComponent = window.encodeURIComponent;
+	var decodeURIComponent = window.decodeURIComponent;
+
+
+	function _stringifyParam(key, val, indexes) {
+		/* jshint eqnull:true */
+		if (val == null || val === '' || typeof val !== 'object') {
+			return encodeURIComponent(key) +
+				(indexes ? '[' + indexes.join('][') + ']' : '') +
+				(val == null || val === '' ? '' : '=' + encodeURIComponent(val));
+		}
+		else {
+			var pairs = [];
+
+			for (var i in val) {
+				if (val.hasOwnProperty(i)) {
+					pairs.push(_stringifyParam(key, val[i], (indexes || []).concat(i >= 0 ? '' : encodeURIComponent(i))));
+				}
+			}
+
+			return pairs.join('&');
+		}
+	}
+
+
+	/**
+	 * @module Pilot.queryString
+	 */
+	var queryString = /** @lends queryString */{
+		/**
+		 * Parse query string
+		 * @param   {string} search
+		 * @returns {Object}
+		 */
+		parse: function (search) {
+			var query = {};
+
+			if (typeof search === 'string') {
+				if (/^[?#]/.test(search)) {
+					search = search.substr(1);
+				}
+
+				var pairs = search.trim().split('&'),
+					i = 0,
+					n = pairs.length,
+					pair,
+					name,
+					val;
+
+				for (; i < n; i++) {
+					pair = pairs[i].split('=');
+					name = pair.shift().replace('[]', '');
+					val = pair.join('=');
+
+					if (val === void 0) {
+						val = '';
+					}
+					else {
+						try {
+							val = decodeURIComponent(val);
+						}
+						catch (err) {
+							val = unescape(val);
+						}
+					}
+
+					if (name) {
+						if (query[name] === void 0) {
+							query[name] = val;
+						}
+						else if (query[name] instanceof Array) {
+							query[name].push(val);
+						}
+						else {
+							query[name] = [query[name], val];
+						}
+					}
+				}
+			}
+
+			return query;
+		},
+
+
+		/**
+		 * Stringify query object
+		 * @param   {Object}  query
+		 * @returns {string}
+		 */
+		stringify: function (query) {
+			var str = [], key, val;
+
+			if (query && query instanceof Object) {
+				for (key in query) {
+					if (query.hasOwnProperty(key)) {
+						str.push(_stringifyParam(key, query[key]));
+					}
+				}
+			}
+
+			return str.join('&');
+		}
+	};
+
+
+	// Export
+	return queryString;
+});
+
 define('src/pilot.js',[
 	'Emitter',
 	'./url',
@@ -1462,7 +1588,8 @@ define('src/pilot.js',[
 	'./loader',
 	'./request',
 	'./route',
-	'./status'
+	'./status',
+	'./queryString'
 ], function (
 	/** Emitter */Emitter,
 	/** URL */URL,
@@ -1470,7 +1597,8 @@ define('src/pilot.js',[
 	/** Pilot.Loader */Loader,
 	/** Pilot.Request */Request,
 	/** Pilot.Route */Route,
-	/** Pilot.Status */Status
+	/** Pilot.Status */Status,
+	/** Pilot.queryString */queryString
 ) {
 	'use strict';
 
@@ -1582,9 +1710,10 @@ define('src/pilot.js',[
 		 * Получить URL по id
 		 * @param  {string} id
 		 * @param  {Object} [params]
+		 * @param  {Object|'inherit'} [query]
 		 */
-		getUrl: function (id, params) {
-			return this[id].getUrl(params);
+		getUrl: function (id, params, query) {
+			return this[id].getUrl(params, query);
 		},
 
 
@@ -1592,10 +1721,11 @@ define('src/pilot.js',[
 		 * Перейти по id
 		 * @param  {string} id
 		 * @param  {Object} [params]
+		 * @param  {Object|'inherit'} [query]
 		 * @return {Promise}
 		 */
-		go: function (id, params) {
-			return this.nav(this[id].getUrl(params));
+		go: function (id, params, query) {
+			return this.nav(this[id].getUrl(params, query));
 		},
 
 
@@ -1811,8 +1941,15 @@ define('src/pilot.js',[
 
 	Emitter.apply(Pilot.prototype);
 
+	// Export
+	Pilot.URL = URL;
 	Pilot.Loader = Loader;
-	Pilot.version = '2.0.1';
+	Pilot.Status = Status;
+	Pilot.Request = Request;
+	Pilot.Route = Route;
+	Pilot.queryString = queryString;
+	Pilot.version = '2.0.0';
+
 	return Pilot;
 });
 
