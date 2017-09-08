@@ -113,8 +113,8 @@ define(['./querystring'], function (/** queryString */queryString) {
 
 		/**
 		 * Set query params
-		 * @param   {object}  query
-		 * @param   {array}   [remove]   if `true`, clear the current `query` and set new
+		 * @param   {object|string}  query
+		 * @param   {array|true}   [remove]   if `true`, clear the current `query` and set new
 		 * @returns {Url}
 		 */
 		setQuery: function (query, remove) {

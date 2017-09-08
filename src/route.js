@@ -40,6 +40,10 @@ define([
 		});
 	};
 
+	var _cleanUrl = function (url) {
+		return url.replace(/\/+$/, '/');
+	};
+
 
 	/**
 	 * Преобразование образца маршрута в функцию генерации URL
@@ -93,7 +97,15 @@ define([
 		}
 
 		/* jshint evil:true */
-		return new Function('params', code += '/"; return url.replace(/\\/+$/, "/");');
+		return new Function(
+			'cleanUrl, stringify',
+			'return function urlBuilder(params, query) {\n' + code + '/";' +
+			'  return cleanUrl(url) + (query ? "?" + stringify(query) : "");' +
+			'}'
+		)(
+			_cleanUrl,
+			queryString.stringify
+		);
 	};
 
 
@@ -328,10 +340,15 @@ define([
 		/**
 		 * Получить URL
 		 * @param  {Object} [params]
+		 * @param  {Object|'inherit'} [query]
 		 * @return {string}
 		 */
-		getUrl: function (params) {
-			return this.url.toUrl ? this.url.toUrl(params, this._urlBuilder) : this._urlBuilder(params);
+		getUrl: function (params, query) {
+			if (query === 'inherit') {
+				query = this.router.request.query;
+			}
+
+			return this.url.toUrl ? this.url.toUrl(params, query, this._urlBuilder) : this._urlBuilder(params, query);
 		},
 
 		/**

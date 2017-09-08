@@ -1,7 +1,7 @@
-module('Pilot.bench');
+QUnit.module('Pilot.bench');
 
 function benchRoute(name, Class) {
-	asyncTest(name, function () {
+	QUnit.asyncTest(name, function (assert) {
 		var max = 1e3, // кол-во итерация
 			maxOpts = 30, // кол-во опций
 			ts,
@@ -16,7 +16,7 @@ function benchRoute(name, Class) {
 				log += (new Array(40 - log.length)).join(' ');
 				log += (delta / max).toFixed(4) + 'ms, total: ' + delta.toFixed(4) + 'ms';
 
-				ok(true, log);
+				assert.ok(true, log);
 				console.info(log);
 				ts = performance.now();
 			},
@@ -119,7 +119,8 @@ benchRoute('Route', Pilot.Route);
 benchRoute('View', Pilot.View);
 
 
-asyncTest('jQuery vs. Alternative', function (){
+QUnit.asyncTest('jQuery vs. Alternative', function (assert) {
+	var done = assert.async();
 	var bench = function (type) {
 		var dfd = $.Deferred();
 		var $iframe = $('<iframe src="./bench.html?' + type + '"/>');
@@ -136,10 +137,10 @@ asyncTest('jQuery vs. Alternative', function (){
 
 	// Тестируем
 	$.when(bench('native'), bench('jquery')).always(function (nts, $ts) {
-		ok(nts, 'Native: ' + nts + 'ms');
-		ok($ts, 'jQuery: ' + $ts + 'ms');
-		ok($ts / nts > 1.5, 'jQuery / Native: ' + ($ts / nts));
+		assert.ok(nts, 'Native: ' + nts + 'ms');
+		assert.ok($ts, 'jQuery: ' + $ts + 'ms');
+		assert.ok($ts / nts > 1.5, 'jQuery / Native: ' + ($ts / nts));
 
-		start();
+		done();
 	});
 });

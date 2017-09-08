@@ -79,7 +79,7 @@ define(['pilot'], function (Pilot) {
 						}
 					}
 				},
-				toUrl: function (params, builder) {
+				toUrl: function (params, query, builder) {
 					if (!(params instanceof Object)) {
 						params = params >= 0 ? {id: params} : {type: params};
 					}
@@ -88,7 +88,7 @@ define(['pilot'], function (Pilot) {
 						params.type = 'inbox';
 					}
 
-					return builder(params);
+					return builder(params, query);
 				}
 			}
 		}
@@ -113,7 +113,7 @@ define(['pilot'], function (Pilot) {
 	QUnit.promiseTest('nav', function (assert) {
 		assert.equal(app['#foo'].regions.length, 1);
 		assert.deepEqual(app.model, {});
-		assert.deepEqual(app['#idx'].model, {indexes: void 0});
+		assert.deepEqual(app['#idx'].model, {indexes: void 0}, 'initial');
 
 		return app.nav('/').then(function () {
 			assert.equal(app.route.id, '#idx');
@@ -160,6 +160,13 @@ define(['pilot'], function (Pilot) {
 		assert.equal(app.getUrl('#letters', 2), '/messages/folder/2/');
 		assert.equal(app.getUrl('#letters', 0), '/messages/inbox/');
 		assert.equal(app.getUrl('#letters', {id: 0}), '/messages/inbox/');
+		assert.equal(app.getUrl('#letters', {id: 0}, {foo: 'bar'}), '/messages/inbox/?foo=bar');
+	});
+
+	QUnit.promiseTest('getUrl: inherit query', function (assert) {
+		return app.nav('/?foo&bar=Y').then(() => {
+			assert.equal(app.getUrl('#letters', {}, 'inherit'), '/messages/?foo&bar=Y');
+		});
 	});
 
 

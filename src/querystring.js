@@ -26,9 +26,8 @@ define([], function () {
 	}
 
 
-
 	/**
-	 * @module queryString
+	 * @module Pilot.queryString
 	 */
 	var queryString = /** @lends queryString */{
 		/**
@@ -56,7 +55,7 @@ define([], function () {
 					name = pair.shift().replace('[]', '');
 					val = pair.join('=');
 
-					if (val === void 0){
+					if (val === void 0) {
 						val = '';
 					}
 					else {
@@ -69,8 +68,6 @@ define([], function () {
 					}
 
 					if (name) {
-
-
 						if (query[name] === void 0) {
 							query[name] = val;
 						}

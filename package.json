@@ -3,10 +3,13 @@
   "version": "2.0.1",
   "devDependencies": {
     "amdclean": "^2.7.0",
-    "grunt": "*",
-    "grunt-contrib-uglify": "*",
-    "grunt-qunit-istanbul": "0.4.7",
-    "grunt-version": "*"
+    "grunt": "^1.0.1",
+    "grunt-contrib-jshint": "^1.0.0",
+    "grunt-contrib-requirejs": "^1.0.0",
+    "grunt-contrib-uglify": "^1.0.0",
+    "grunt-qunit-istanbul": "^1.0.0",
+    "grunt-version": "*",
+    "request": "^2.65.0"
   },
   "description": "Multifunction JavaScript router.",
   "main": "Pilot.js",
@@ -27,9 +30,5 @@
   "license": "MIT",
   "include": [
     "Pilot.js"
-  ],
-  "dependencies": {
-    "grunt-requirejs": "^0.4.2",
-    "request": "^2.65.0"
-  }
+  ]
 }

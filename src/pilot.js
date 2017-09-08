@@ -5,7 +5,8 @@ define([
 	'./loader',
 	'./request',
 	'./route',
-	'./status'
+	'./status',
+	'./queryString'
 ], function (
 	/** Emitter */Emitter,
 	/** URL */URL,
@@ -13,7 +14,8 @@ define([
 	/** Pilot.Loader */Loader,
 	/** Pilot.Request */Request,
 	/** Pilot.Route */Route,
-	/** Pilot.Status */Status
+	/** Pilot.Status */Status,
+	/** Pilot.queryString */queryString
 ) {
 	'use strict';
 
@@ -125,9 +127,10 @@ define([
 		 * Получить URL по id
 		 * @param  {string} id
 		 * @param  {Object} [params]
+		 * @param  {Object|'inherit'} [query]
 		 */
-		getUrl: function (id, params) {
-			return this[id].getUrl(params);
+		getUrl: function (id, params, query) {
+			return this[id].getUrl(params, query);
 		},
 
 
@@ -135,10 +138,11 @@ define([
 		 * Перейти по id
 		 * @param  {string} id
 		 * @param  {Object} [params]
+		 * @param  {Object|'inherit'} [query]
 		 * @return {Promise}
 		 */
-		go: function (id, params) {
-			return this.nav(this[id].getUrl(params));
+		go: function (id, params, query) {
+			return this.nav(this[id].getUrl(params, query));
 		},
 
 
@@ -354,7 +358,14 @@ define([
 
 	Emitter.apply(Pilot.prototype);
 
+	// Export
+	Pilot.URL = URL;
 	Pilot.Loader = Loader;
+	Pilot.Status = Status;
+	Pilot.Request = Request;
+	Pilot.Route = Route;
+	Pilot.queryString = queryString;
 	Pilot.version = '2.0.0';
+
 	return Pilot;
 });

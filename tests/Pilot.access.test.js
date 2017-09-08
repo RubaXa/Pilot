@@ -4,22 +4,22 @@
 /**
  *       ~~~ TESTS ~~~
  */
-module('Pilot.access');
+QUnit.module('Pilot.access');
 
 
-test('auth', function (){
+QUnit.test('auth', function (assert) {
 	var log = [];
 	var authFlag = false;
 	var router = new Pilot;
 
 
-	Pilot.access['auth'] = function (){
-		return	authFlag;
+	Pilot.access['auth'] = function () {
+		return authFlag;
 	};
 
 
-	Pilot.access['no-auth'] = function (){
-		return	!authFlag;
+	Pilot.access['no-auth'] = function () {
+		return !authFlag;
 	};
 
 
@@ -31,9 +31,11 @@ test('auth', function (){
 		.route('/login/', {
 			accessPermission: 'no-auth',
 			accessDeniedRedirectTo: '/welcome/',
-			onRouteStart: function (){ authFlag = true; }
+			onRouteStart: function () {
+				authFlag = true;
+			}
 		})
-		.on('route', function (evt, req){
+		.on('route', function (evt, req) {
 			log.push(req.path);
 		})
 	;
@@ -47,29 +49,31 @@ test('auth', function (){
 	log.push('login?');
 	router.nav('/login/');
 
-	equal(log.join(' -> '), '/ -> search? -> /login/ -> /search/ -> login? -> /welcome/');
+	assert.equal(log.join(' -> '), '/ -> search? -> /login/ -> /search/ -> login? -> /welcome/');
 });
 
 
-test('owner', function (){
+QUnit.test('owner', function (assert) {
 	var log = [];
 	var authUserId = 123;
 
-	Pilot.access['owner'] = function (req){
-		return	req.params.id == authUserId;
+	Pilot.access['owner'] = function (req) {
+		return req.params.id == authUserId;
 	};
 
 	var router = new Pilot;
 
 	router
-		.on('route', function (evt, req){ log.push(req.path); })
+		.on('route', function (evt, req) {
+			log.push(req.path);
+		})
 		.route('user', '/user/:id/', {})
 		.route('user-edit', '/user/:id/edit/', {
-			  accessPermission: 'owner'
+			accessPermission: 'owner'
 			, accessDeniedRedirectTo: '..'
 		})
 		.route('user-settings', '/user/:id/settings/', {
-			  accessPermission: 'owner'
+			accessPermission: 'owner'
 			, accessDeniedRedirectTo: 'user'
 		})
 	;
@@ -84,25 +88,26 @@ test('owner', function (){
 	router.nav('/user/321/settings/');
 
 
-	equal(
-	  log.join(' -> ')
-	, '/user/123/ -> /user/321/ -> ' +
-			'/user/123/edit/ -> /user/321/ -> ' +
-			'/user/123/settings/ -> /user/321/'
+	assert.equal(log.join(' -> '),
+		'/user/123/ -> /user/321/ -> ' +
+		'/user/123/edit/ -> /user/321/ -> ' +
+		'/user/123/settings/ -> /user/321/'
 	);
 });
 
 
-test('redirectToFn', function (){
+QUnit.test('redirectToFn', function (assert) {
 	var log = [];
 	var router = new Pilot;
 
 	router
-		.on('route', function (evt, req){ log.push(req.path); })
+		.on('route', function (evt, req) {
+			log.push(req.path);
+		})
 		.route('/to/:id/', {
 			accessPermission: false,
-			accessDeniedRedirectTo: function (req){
-				return '/done/'+req.params.id+'/';
+			accessDeniedRedirectTo: function (req) {
+				return '/done/' + req.params.id + '/';
 			}
 		})
 		.route('/done/:id/')
@@ -112,21 +117,22 @@ test('redirectToFn', function (){
 	router.nav('/to/2/');
 	router.nav('/done/3/');
 
-	equal(log.join(' -> '), '/done/1/ -> /done/2/ -> /done/3/');
+	assert.equal(log.join(' -> '), '/done/1/ -> /done/2/ -> /done/3/');
 });
 
 
-
-test('deferrer', function (){
+QUnit.test('deferrer', function (assert) {
 	var log = [];
 	var router = new Pilot;
 
-	Pilot.access['promise'] = function (req){
-		return	jQuery.Deferred()[/public/.test(req.path) ? 'resolve' : 'reject']();
+	Pilot.access['promise'] = function (req) {
+		return jQuery.Deferred()[/public/.test(req.path) ? 'resolve' : 'reject']();
 	};
 
 	router
-		.on('route', function (evt, req){ return log.push(req.path); })
+		.on('route', function (evt, req) {
+			return log.push(req.path);
+		})
 		.route('/public/', {
 			accessPermission: 'promise',
 			accessDeniedRedirectTo: '/'
@@ -136,8 +142,8 @@ test('deferrer', function (){
 			accessDeniedRedirectTo: '/'
 		})
 		.route('/public/closed/', {
-			loadData: function (){
-				return	jQuery.Deferred().reject({ redirectTo: '/public/' });
+			loadData: function () {
+				return jQuery.Deferred().reject({redirectTo: '/public/'});
 			}
 		})
 	;
@@ -146,5 +152,5 @@ test('deferrer', function (){
 	router.nav('/private/');
 	router.nav('/public/closed/');
 
-	equal(log.join(' -> '), '/public/ -> / -> /public/');
+	assert.equal(log.join(' -> '), '/public/ -> / -> /public/');
 });

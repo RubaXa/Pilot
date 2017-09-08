@@ -1,8 +1,8 @@
 /*global Pilot, module, test, equal*/
 
-module('Pilot.profiler');
+QUnit.module('Pilot.profiler');
 
-test('profiler', function (){
+QUnit.test('profiler', function (assert) {
 	function sleep(ms){
 		var start = new Date;
 		while( new Date - start < ms ){}
@@ -59,5 +59,5 @@ test('profiler', function (){
 	Router.nav('/help/');
 
 
-	equal(log.join('-'), 'ok-ok');
+	assert.equal(log.join('-'), 'ok-ok');
 });

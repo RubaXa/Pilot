@@ -1,8 +1,8 @@
 /*global Pilot, module, test, equal*/
 
-module('Pilot.create');
+QUnit.module('Pilot.create');
 
-test('404', function (){
+QUnit.test('404', function (assert) {
 	var log = [];
 	var app = Pilot.create({
 		'404': function (req){
@@ -35,7 +35,7 @@ test('404', function (){
 	app.nav('/bar/456');
 	app.nav('/fail/');
 
-	equal(log.join('->'),
+	assert.equal(log.join('->'),
 		'init->/' +
 		'->foo->404[page]:/foo/123/' +
 		'->bar/321->404[bar]:/bar/321/fail' +
@@ -44,9 +44,7 @@ test('404', function (){
 	);
 });
 
-
-
-test('access + referrer', function (){
+QUnit.test('access + referrer', function (assert) {
 	var log = [];
 	var isAuth = false;
 
@@ -92,13 +90,10 @@ test('access + referrer', function (){
 	app.nav('/user/fail/');
 	app.nav('/fail/');
 
-
-	equal(log.join('->'), 'index->/login/->123->404:/user/fail/->/fail/:404');
+	assert.equal(log.join('->'), 'index->/login/->123->404:/user/fail/->/fail/:404');
 });
 
-
-
-test('app', function (){
+QUnit.test('app', function (assert) {
 	var secretEl;
 	var app = Pilot.create({
 		el: '#app',
@@ -140,29 +135,29 @@ test('app', function (){
 
 
 	app.nav('/');
-	equal($('a.active').length, 1, 'active links (I)');
-	equal($('a.active').prop('href').split('#!')[1], '/', 'active href (index)');
-	ok($('[data-view-id="index"]').is(':visible'), 'index visible');
-	ok(!$('[data-view-id="help"]').is(':visible'), 'help hidded');
+	assert.equal($('a.active').length, 1, 'active links (I)');
+	assert.equal($('a.active').prop('href').split('#!')[1], '/', 'active href (index)');
+	assert.ok($('[data-view-id="index"]').is(':visible'), 'index visible');
+	assert.ok(!$('[data-view-id="help"]').is(':visible'), 'help hidded');
 
 	app.nav('/help');
-	equal($('a.active').length, 1, 'active links (II)');
-	equal($('a.active').prop('href').split('#!')[1], '/help', 'active href (help)');
-	ok(!$('[data-view-id="index"]').is(':visible'), 'index hidden');
-	ok($('[data-view-id="help"]').is(':visible'), 'help visible');
+	assert.equal($('a.active').length, 1, 'active links (II)');
+	assert.equal($('a.active').prop('href').split('#!')[1], '/help', 'active href (help)');
+	assert.ok(!$('[data-view-id="index"]').is(':visible'), 'index hidden');
+	assert.ok($('[data-view-id="help"]').is(':visible'), 'help visible');
 
 	app.nav('/help/foo/');
-	equal($('a.active').prop('href').split('#!')[1], '/help', 'active href (help, II)');
-	ok($('[data-view-id="help"]').is(':visible'), 'help visible');
-	ok($('[data-view-id="help-details"]').is(':visible'), 'help-details visible');
-	ok($('[data-view-id="help-details"]').html(), 'foo');
+	assert.equal($('a.active').prop('href').split('#!')[1], '/help', 'active href (help, II)');
+	assert.ok($('[data-view-id="help"]').is(':visible'), 'help visible');
+	assert.ok($('[data-view-id="help-details"]').is(':visible'), 'help-details visible');
+	assert.ok($('[data-view-id="help-details"]').html(), 'foo');
 
 	app.nav('/help/bar/');
-	ok($('[data-view-id="help-details"]').html(), 'bar');
+	assert.ok($('[data-view-id="help-details"]').html(), 'bar');
 
 	app.nav('/help/baz/');
-	ok(!$('[data-view-id="help-details"]').is(':visible'), 'help-details hidden');
-	ok($('[data-view-id="help-404"]').is(':visible'), '404 visible');
+	assert.ok(!$('[data-view-id="help-details"]').is(':visible'), 'help-details hidden');
+	assert.ok($('[data-view-id="help-404"]').is(':visible'), '404 visible');
 
 //	app.nav('/about/secret/');
 //	equal(secretEl, $('[data-view-id="about"]')[0], 'secret');

@@ -23,6 +23,40 @@ router.go('#route-id').then(() => ...);
 
 ---
 
+### API
+
+ - **create**(stitemap: `Object`): `Pilot`
+ - **URL**([url: `string`[, base: `string`]]) — see [Native URL](https://developer.mozilla.org/ru/docs/Web/API/URL) and
+   - **parse**(url: `string`)
+   - **toMatcher**(pattern: `string|RegExp`)
+   - `#properties`
+     - **protocol**: `string`
+     - **protocolSeparator**: `string`
+     - **credhost**: `string`
+     - **cred**: `string`
+     - **username**: `string`
+     - **password**: `string`
+     - **host**: `string`
+     - **hostname**: `string`
+     - **port**: `string`
+     - **origin**: `string`
+     - **path**: `string` or **pathname**
+     - **segment1**: `string`
+     - **segment2**: `string`
+     - **search**: `string`
+     - **query**: `object`
+     - **params**: `object`
+     - **hash**: `string`
+   - `#methods`
+     - **addToQuery**(add: `object|string|null`)
+     - **removeFromQuery**(remove: `string[]`)
+     - **setQuery**(add: `object|string|null`[, remove: `string[]`)
+ - **queryString**
+   - **parse**(value: `string`): `object`
+   - **stringify**(query: `object`): `string`
+
+---
+
 
 ### `Pilot` livecycle
 
@@ -76,17 +110,19 @@ Current route.
 
 ---
 
-#### getUrl(id[, params]):`string`
+#### getUrl(id[, params[, query]]):`string`
 
  - **id**:`string` — route id
- - **params**:object — route parametrs (optional)
+ - **params**:`object` — route parametrs (optional)
+ - **query**:`object|inherit` — route GET-query parametrs (optional)
 
 ---
 
-#### go(id[, params]):`Promise`
+#### go(id[, params[, query]]):`Promise`
 
  - **id**:`string` — route id
- - **params**:object — route parametrs (optional)
+ - **params**:`object` — route parametrs (optional)
+ - **query**:`object|inherit` — route GET-query parametrs (optional)
 
 ---
 
@@ -110,7 +146,8 @@ Protected method.
 
 #### getUrl([params]):`string`
 
- - **params**:`Object`
+ - **params**:`Object` (optional)
+ - **query**:`object|inherit` — route GET-query parametrs (optional)
 
 ---
 
