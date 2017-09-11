@@ -1752,10 +1752,9 @@ define('src/pilot.js',[
 				details = details || {};
 
 				// Находим нужный нам маршрут
-				currentRoute = routes.filter(function (/** Pilot.Route */item) {
+				currentRoute = routes.find(function (/** Pilot.Route */item) {
 					return !item.__group__ && item.match(url, req);
-				})[0];
-
+				});
 
 				_this.activeUrl = url;
 				_this.activeRequest = req;
