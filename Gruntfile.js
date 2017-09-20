@@ -53,30 +53,28 @@ module.exports = function (grunt) {
 					out: 'Pilot.js',
 					optimize: 'none',
 					wrap: {
-						start: '(function (define) {',
-
-						end: `})((function () {
-							var defined = {};
-							var _define = function (name, deps, callback) {
-								var i = deps.length, depName;
-
-								while (i--) {
-									depName = name.split('/').slice(0, -1).join('/');
-									deps[i] = defined[deps[i].replace('./', depName ? depName + '/' : '')];
-								}
-
-								if (name === 'src/pilot.js') {
-									define(['Emitter'], function () {
-										return callback.apply(null, deps);
-									});
-								} else {
+						start: `(function (define, factory) {
+							define(['Emitter'], function (Emitter) {
+								var defined = {Emitter: Emitter};
+								var syncDefine = function (name, deps, callback) {
+									var i = deps.length, depName;
+	
+									while (i--) {
+										depName = name.split('/').slice(0, -1).join('/');
+										deps[i] = defined[deps[i].replace('./', depName ? depName + '/' : '')];
+									}
+	
 									defined[name] = callback.apply(null, deps);
-								}
-							};
-							_define.amd = true;
-							return _define;
-						})());
-						`
+								};
+								syncDefine.amd = true;
+								factory(syncDefine);
+								return defined['src/pilot.js'];
+							});
+						})(typeof define === 'function' && define.amd ? define : function (deps, callback) {
+							window.Pilot = callback(window.Emitter);
+						}, function (define) {`,
+
+						end: `});`
 					}
 				}
 			}
