@@ -48,7 +48,7 @@ module.exports = function (grunt) {
 					baseUrl: './',
 					include: 'src/pilot.js',
 					paths: {
-						'Emitter': 'vendors/Emitter'
+						'Emitter': 'empty:'
 					},
 					out: 'Pilot.js',
 					optimize: 'none',
@@ -66,7 +66,7 @@ module.exports = function (grunt) {
 								}
 
 								if (name === 'src/pilot.js') {
-									define([], function () {
+									define(['Emitter'], function () {
 										return callback.apply(null, deps);
 									});
 								} else {
