@@ -313,7 +313,7 @@ define([
 					if (
 						url &&
 						hostnameRegExp.test(url) &&
-						!evt.isDefaultPrevented() &&
+						!evt.defaultPrevented &&
 						!(evt.metaKey || evt.ctrlKey) &&
 						(!filter || filter(url))
 					) {
