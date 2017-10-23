@@ -3,12 +3,12 @@
 								var defined = {Emitter: Emitter};
 								var syncDefine = function (name, deps, callback) {
 									var i = deps.length, depName;
-	
+
 									while (i--) {
 										depName = name.split('/').slice(0, -1).join('/');
 										deps[i] = defined[deps[i].replace('./', depName ? depName + '/' : '')];
 									}
-	
+
 									defined[name] = callback.apply(null, deps);
 								};
 								syncDefine.amd = true;
@@ -593,6 +593,10 @@ define('src/loader',['./match'], function (match, Emitter) {
 				_options.processing && (models = _options.processing(req, models));
 
 				return models;
+			}).catch(function (err) {
+				console.error(err);
+
+				throw err;
 			});
 
 			if (_options.persist) {
@@ -736,7 +740,7 @@ define('src/route',[
 				if (rule['default'] != null) {
 					target[name] = rule['default'];
 				}
-				
+
 				return true;
 			}
 
