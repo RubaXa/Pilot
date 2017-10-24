@@ -106,8 +106,6 @@ define(['./match'], function (match, Emitter) {
 			names.forEach(waitFor);
 
 			var _promise = Promise.all(promises).then(function (results) {
-				delete _fetchPromises[_persistKey];
-
 				names.forEach(function (name) {
 					models[name] = results[models[name]];
 				});
@@ -119,6 +117,12 @@ define(['./match'], function (match, Emitter) {
 
 			if (_options.persist) {
 				_fetchPromises[_persistKey] = _promise;
+
+				_fetchPromises[_persistKey].then(function () {
+					delete _fetchPromises[_persistKey];
+				}, function () {
+					delete _fetchPromises[_persistKey];
+				});
 			}
 
 			return _promise;

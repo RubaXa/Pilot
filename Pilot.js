@@ -17,7 +17,8 @@
 							});
 						})(typeof define === 'function' && define.amd ? define : function (deps, callback) {
 							window.Pilot = callback(window.Emitter);
-						}, function (define) {define('src/querystring',[], function () {
+						}, function (define) {
+define('src/querystring',[], function () {
 	'use strict';
 
 	var encodeURIComponent = window.encodeURIComponent;
@@ -584,8 +585,6 @@ define('src/loader',['./match'], function (match, Emitter) {
 			names.forEach(waitFor);
 
 			var _promise = Promise.all(promises).then(function (results) {
-				delete _fetchPromises[_persistKey];
-
 				names.forEach(function (name) {
 					models[name] = results[models[name]];
 				});
@@ -597,6 +596,12 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 			if (_options.persist) {
 				_fetchPromises[_persistKey] = _promise;
+
+				_fetchPromises[_persistKey].then(function () {
+					delete _fetchPromises[_persistKey];
+				}, function () {
+					delete _fetchPromises[_persistKey];
+				});
 			}
 
 			return _promise;
