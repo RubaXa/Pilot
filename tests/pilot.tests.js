@@ -93,6 +93,7 @@ define(['../src/pilot'], function (Pilot) {
 		}
 	});
 
+
 	QUnit.test('routes', function (assert) {
 		assert.deepEqual(app.routes.map(function (route) {
 			return {id: route.id, url: route.url.pattern, group: route.__group__};
@@ -112,7 +113,14 @@ define(['../src/pilot'], function (Pilot) {
 		assert.deepEqual(app.model, {});
 		assert.deepEqual(app['#idx'].model, {indexes: void 0}, 'initial');
 
-		return app.nav('/').then(function () {
+		var replaceState = false;
+
+		app.one('routeend', (evt) => {
+			replaceState = evt.details.replaceState;
+		});
+
+		return app.nav('/', {replaceState: true}).then(function () {
+			assert.ok(replaceState);
 			assert.equal(app.route.id, '#idx');
 			assert.equal(app.url.href, app.request.href);
 			assert.equal(app.request.path, '/');

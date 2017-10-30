@@ -139,17 +139,18 @@ define([
 		 * @param  {string} id
 		 * @param  {Object} [params]
 		 * @param  {Object|'inherit'} [query]
+		 * @param  {Object} [details]
 		 * @return {Promise}
 		 */
-		go: function (id, params, query) {
-			return this.nav(this[id].getUrl(params, query));
+		go: function (id, params, query, details) {
+			return this.nav(this[id].getUrl(params, query), details);
 		},
 
 
 		/**
 		 * Навигация по маршруту
 		 * @param   {string|URL|Pilot.Request}  href
-		 * @param   {Object}  [details]
+		 * @param   {{initiator: string, replaceState: boolean}}  [details]
 		 * @returns {Promise}
 		 */
 		nav: function (href, details) {
@@ -269,7 +270,7 @@ define([
 		/**
 		 * Слушать события
 		 * @param {HTMLElement} target
-		 * @param {{logger:object, autoStart: boolean, filter: Function}} options
+		 * @param {{logger:object, autoStart: boolean, filter: Function, replaceState: boolean}} options
 		 */
 		listenFrom: function (target, options) {
 			var _this = this;
@@ -284,10 +285,11 @@ define([
 			// Корректировка url, если location не совпадает
 			_this.on('routeend', function (evt, req) {
 				var href = req.toString();
+				var replaceState = evt.details && evt.details.replaceState;
 
 				if (location.toString() !== href) {
 					logger && logger.add('router.pushState', {href: href});
-					history.pushState(null, null, href);
+					history[replaceState ? 'replaceState' : 'pushState'](null, null, href);
 				}
 			});
 
@@ -318,9 +320,15 @@ define([
 						(!filter || filter(url))
 					) {
 						evt.preventDefault();
+
+						var details = {
+							initiator: 'click',
+							replaceState: el.getAttribute('data-history-replace-state') === 'y',
+						};
+
 						var clickNav = function () {
-							_this.nav(url, {initiator: 'click'});
-							history.pushState(null, null, url);
+							_this.nav(url, details);
+							history[details.replaceState ? 'replaceState' : 'pushState'](null, null, url);
 						};
 
 						if (logger) {
@@ -331,15 +339,23 @@ define([
 						break;
 					}
 				} while ((el = el.parentNode) && (++level < MAX_LEVEL));
+
+				el = null;
 			});
 
 			if (options.autoStart) {
 				if (logger) {
 					logger.call('router.nav.initial', {href: location.href}, function () {
-						_this.nav(location.href, {initiator: 'initial'});
+						_this.nav(location.href, {
+							initiator: 'initial',
+							replaceState: options.replaceState,
+						});
 					});
 				} else {
-					_this.nav(location.href, {initiator: 'initial'});
+					_this.nav(location.href, {
+						initiator: 'initial',
+						replaceState: options.replaceState,
+					});
 				}
 			}
 		}
