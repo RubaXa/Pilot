@@ -218,7 +218,7 @@ define([
 								_this.route = currentRoute;
 								_this.request = req;
 
-								_this.__model__.bind(this, model);
+								_this.__model__.bind(_this, model);
 
 								// Обходим всем маршруты и тегерим события
 								routes.forEach(function (/** Route */route) {
