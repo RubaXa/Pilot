@@ -64,18 +64,20 @@ define(['./match'], function (match, Emitter) {
 
 
 		fetch: function (req) {
+			var _this = this;
+
 			if (req == null) {
-				req = this._lastReq;
+				req = _this._lastReq;
 			}
 
-			this._lastReq = req;
+			_this._lastReq = req;
 
-			var _index = this._index;
-			var _options = this._options;
+			var _index = _this._index;
+			var _options = _this._options;
 			var _persistKey = req.toString();
-			var _fetchPromises = this._fetchPromises;
+			var _fetchPromises = _this._fetchPromises;
 
-			var names = this.names;
+			var names = _this.names;
 			var models = {};
 			var promises = [];
 			var waitFor = function (name) {
@@ -111,6 +113,10 @@ define(['./match'], function (match, Emitter) {
 				});
 
 				_options.processing && (models = _options.processing(req, models));
+
+				if (_this._bindedRoute) {
+					_this._bindedRoute.model = _this.extract(models);
+				}
 
 				return models;
 			});
@@ -153,6 +159,11 @@ define(['./match'], function (match, Emitter) {
 			});
 
 			return data;
+		},
+
+		bind: function (route, model) {
+			route.model = this.extract(model);
+			this._bindedRoute = route;
 		}
 	};
 

@@ -542,18 +542,20 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 
 		fetch: function (req) {
+			var _this = this;
+
 			if (req == null) {
-				req = this._lastReq;
+				req = _this._lastReq;
 			}
 
-			this._lastReq = req;
+			_this._lastReq = req;
 
-			var _index = this._index;
-			var _options = this._options;
+			var _index = _this._index;
+			var _options = _this._options;
 			var _persistKey = req.toString();
-			var _fetchPromises = this._fetchPromises;
+			var _fetchPromises = _this._fetchPromises;
 
-			var names = this.names;
+			var names = _this.names;
 			var models = {};
 			var promises = [];
 			var waitFor = function (name) {
@@ -589,6 +591,10 @@ define('src/loader',['./match'], function (match, Emitter) {
 				});
 
 				_options.processing && (models = _options.processing(req, models));
+
+				if (_this._bindedRoute) {
+					_this._bindedRoute.model = _this.extract(models);
+				}
 
 				return models;
 			});
@@ -631,6 +637,11 @@ define('src/loader',['./match'], function (match, Emitter) {
 			});
 
 			return data;
+		},
+
+		bind: function (route, model) {
+			route.model = this.extract(model);
+			this._bindedRoute = route;
 		}
 	};
 
@@ -1489,10 +1500,10 @@ define('src/pilot.js',[
 							if (_this.activeUrl === url) {
 								_this.url = url;
 								_this.referrer = _this.request.href;
-
-								_this.model = _this.__model__.extract(model);
 								_this.route = currentRoute;
 								_this.request = req;
+
+								_this.__model__.bind(this, model);
 
 								// Обходим всем маршруты и тегерим события
 								routes.forEach(function (/** Route */route) {

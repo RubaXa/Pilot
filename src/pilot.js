@@ -215,10 +215,10 @@ define([
 							if (_this.activeUrl === url) {
 								_this.url = url;
 								_this.referrer = _this.request.href;
-
-								_this.model = _this.__model__.extract(model);
 								_this.route = currentRoute;
 								_this.request = req;
+
+								_this.__model__.bind(this, model);
 
 								// Обходим всем маршруты и тегерим события
 								routes.forEach(function (/** Route */route) {
