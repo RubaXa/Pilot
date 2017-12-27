@@ -1601,7 +1601,7 @@ define('src/pilot.js',[
 						url &&
 						hostnameRegExp.test(url) &&
 						!evt.defaultPrevented &&
-						!(evt.metaKey || evt.ctrlKey) &&
+						!(evt.metaKey || evt.ctrlKey || evt.button === 2) &&
 						(!filter || filter(url))
 					) {
 						evt.preventDefault();
