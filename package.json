@@ -16,7 +16,7 @@
   "scripts": {
     "test": "grunt test",
     "build": "grunt build",
-    "prepublish": "npm test && npm run build"
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",

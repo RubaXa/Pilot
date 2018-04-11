@@ -108,17 +108,21 @@ define(['./match'], function (match, Emitter) {
 			names.forEach(waitFor);
 
 			var _promise = Promise.all(promises).then(function (results) {
-				names.forEach(function (name) {
-					models[name] = results[models[name]];
-				});
+				if (_this._lastReq === req) {
+					names.forEach(function (name) {
+						models[name] = results[models[name]];
+					});
 
-				_options.processing && (models = _options.processing(req, models));
+					_options.processing && (models = _options.processing(req, models));
 
-				if (_this._bindedRoute) {
-					_this._bindedRoute.model = _this.extract(models);
+					if (_this._bindedRoute) {
+						_this._bindedRoute.model = _this.extract(models);
+					}
+
+					return models;
+				} else {
+					return _this._lastPromise;
 				}
-
-				return models;
 			});
 
 			if (_options.persist) {
@@ -130,6 +134,8 @@ define(['./match'], function (match, Emitter) {
 					delete _fetchPromises[_persistKey];
 				});
 			}
+
+			_this._lastPromise = _promise;
 
 			return _promise;
 		},
@@ -145,6 +151,9 @@ define(['./match'], function (match, Emitter) {
 			return new Loader(models);
 		},
 
+		getLastReq: function () {
+			return this._lastReq;
+		},
 
 		/**
 		 * Достаем только принадлежание лоудеру свойства
