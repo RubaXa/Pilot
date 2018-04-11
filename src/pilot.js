@@ -178,6 +178,10 @@ define([
 				_this.activeRequest = req;
 				_this.activeRoute = currentRoute;
 
+				if (!_this.route) {
+					_this.route = currentRoute;
+				}
+
 				_this.trigger('before-route', [req], details);
 
 

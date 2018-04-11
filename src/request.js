@@ -26,7 +26,7 @@ define(['./url', './querystring'], function (/** URL */URL, /** queryString */qu
 
 		this.hash = url.hash;
 
-		this.route = router && router.route || {};
+		this.route = router && (router.route || router.activeRoute) || {};
 		this.router = router;
 		this.referrer = referrer;
 		this.redirectHref = null;

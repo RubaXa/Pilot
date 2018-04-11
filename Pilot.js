@@ -687,7 +687,7 @@ define('src/request',['./url', './querystring'], function (/** URL */URL, /** qu
 
 		this.hash = url.hash;
 
-		this.route = router && router.route || {};
+		this.route = router && (router.route || router.activeRoute) || {};
 		this.router = router;
 		this.referrer = referrer;
 		this.redirectHref = null;
@@ -1471,6 +1471,10 @@ define('src/pilot.js',[
 				_this.activeUrl = url;
 				_this.activeRequest = req;
 				_this.activeRoute = currentRoute;
+
+				if (!_this.route) {
+					_this.route = currentRoute;
+				}
 
 				_this.trigger('before-route', [req], details);
 
