@@ -215,7 +215,7 @@ define([
 					currentRoute.access(req).then(function () {
 						// Доступ есть, теперь собираем данные для маршрута
 						return currentRoute.fetch(req).then(function (/** Object */model) {
-							if (_this.activeUrl === url) {
+							if (_this.activeUrl === url && model !== null) {
 								_this.url = url;
 								_this.referrer = _this.request.href;
 								_this.route = currentRoute;
