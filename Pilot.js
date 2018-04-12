@@ -555,6 +555,8 @@ define('src/loader',['./match'], function (match, Emitter) {
 			var _persistKey = req.toString();
 			var _fetchPromises = _this._fetchPromises;
 
+			_this._lastKey = _persistKey;
+
 			var names = _this.names;
 			var models = {};
 			var promises = [];
@@ -603,7 +605,7 @@ define('src/loader',['./match'], function (match, Emitter) {
 			var _promise = Promise
 				.all(promises)
 				.then(function (results) {
-					if (_this._lastReq === req) {
+					if (_this._lastKey === _persistKey) {
 						names.forEach(function (name) {
 							models[name] = results[models[name]];
 						});

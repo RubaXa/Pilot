@@ -237,13 +237,14 @@ define(['../src/pilot'], function (Pilot) {
 		race.nav('/100');
 		race.nav('/50');
 		race.nav('/80');
+		race.nav('/50');
 
 		setTimeout(function () {
 			loader.fetch();
 		}, 60);
 
 		return sleep(110).then(function () {
-			assert.deepEqual(log, ['80']);
+			assert.deepEqual(log, ['50']);
 		});
 	});
 
