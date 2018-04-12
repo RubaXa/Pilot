@@ -184,7 +184,6 @@ define([
 
 				_this.trigger('before-route', [req], details);
 
-
 				if (!_this._promise) {
 					_this._promise = _promise = new Promise(function (resolve, reject) {
 						// Только в целях оптимизации стека

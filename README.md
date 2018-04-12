@@ -8,8 +8,12 @@ Multifunctional JavaScript router solves the problem of routing your application
 ```js
 const router = Pilot.create({
 	'#route-id': {
-		url: '/:any?', // route pattern
+    url: '/:type(/:detail)?', // route pattern
+    model: {
+      user: (req) => fetch(`/api/${req.params.type}`).then(r => r.json()),
+    },
 		onroute(/**Pilot.Request*/req) {
+      console.log(this.model.user);
 		}
 	}
 });
@@ -19,6 +23,9 @@ router.listenFrom(document, {autoStart: true});
 
 // Где-то в коде
 router.go('#route-id').then(() => ...);
+router.getUrl('#route-id', {type: 'user'}); // '/user';
+router.route.getUrl({type: 'user'}); // '/user';
+router.route.getUrl({type: 'user', detail: 123}); // '/user/123';
 ```
 
 ---
@@ -135,7 +142,7 @@ Current route.
 ### `Pilot.Route` methods and properties
 
 #### model:`Object`
-Local models.
+Local models (inherit global models).
 
 ---
 
@@ -144,7 +151,7 @@ Protected method.
 
 ---
 
-#### getUrl([params]):`string`
+#### getUrl([params, [query]]):`string`
 
  - **params**:`Object` (optional)
  - **query**:`object|inherit` — route GET-query parametrs (optional)
@@ -154,3 +161,45 @@ Protected method.
 #### is(id):`boolean`
 
  **id**:string — route id or space-separated list
+
+
+---
+
+### `Pilot.Loader`
+
+```js
+const modelLoader = new Pilot.Loader({
+  user: ({params:{id}}) => fetch(`/api/user/${id}`).then(r => r.json()),
+  status: () => fetch(`/api/status`).then(r => r.json()),
+}, {
+  // неважно сколько раз вызвать `fetch`,
+  // если уже есть запрос на сервер, новый не последует
+  persist: true,
+
+  // Обработку данных загруженной модели
+  processingModel(modelName, modelData, req) {
+    return {...modelData, pathed: true}; // or Promise
+  },
+
+  // Обработка ошибки при загрузки модели
+  processingModelError(modelName, error, req) {
+    return Promise.resolve({defaultData: 123}); // если undefined для reject
+  },
+
+  // Финальная обработка полученных данных
+  processing(req, models) {
+    return {...models, patched: true};
+  },
+});
+
+// Используем `modelLoader`
+const router = Pilot.create({
+  model: modelLoader,
+});
+
+// Где-то в коде
+modelLoader.fetch().then(model => {
+  console.log(model.user);
+  console.log(model.status);
+});
+```

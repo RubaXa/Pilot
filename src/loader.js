@@ -91,7 +91,22 @@ define(['./match'], function (match, Emitter) {
 						} else {
 							resolve(model.defaults);
 						}
-					});
+					})
+						.then(function (data) {
+							if (_options.processingModel) {
+								data = _options.processingModel(name, data, req);
+							}
+							return data;
+						})
+						.catch(function (err) {
+							if (_options.processingModelError) {
+								var p = _options.processingModelError(name, err, req);
+								if (p !== null) {
+									return p;
+								}
+							}
+							return Promise.reject(err);
+						});
 
 					idx = promises.push(idx) - 1;
 					models[name] = idx;
@@ -107,23 +122,26 @@ define(['./match'], function (match, Emitter) {
 			// Загружаем все модели
 			names.forEach(waitFor);
 
-			var _promise = Promise.all(promises).then(function (results) {
-				if (_this._lastReq === req) {
-					names.forEach(function (name) {
-						models[name] = results[models[name]];
-					});
+			var _promise = Promise
+				.all(promises)
+				.then(function (results) {
+					if (_this._lastReq === req) {
+						names.forEach(function (name) {
+							models[name] = results[models[name]];
+						});
 
-					_options.processing && (models = _options.processing(req, models));
+						_options.processing && (models = _options.processing(req, models));
 
-					if (_this._bindedRoute) {
-						_this._bindedRoute.model = _this.extract(models);
+						if (_this._bindedRoute) {
+							_this._bindedRoute.model = _this.extract(models);
+						}
+
+						return models;
+					} else {
+						return _this._lastPromise;
 					}
-
-					return models;
-				} else {
-					return _this._lastPromise;
-				}
-			});
+				})
+			;
 
 			if (_options.persist) {
 				_fetchPromises[_persistKey] = _promise;

@@ -30,7 +30,7 @@ define([
 				if (rule['default'] != null) {
 					target[name] = rule['default'];
 				}
-				
+
 				return true;
 			}
 
@@ -124,6 +124,13 @@ define([
 		 * @private
 		 */
 		this.url = {};
+
+		/**
+		 * Параметры маршрута
+		 * @type {Object}
+		 * @private
+		 */
+		this.params = {};
 
 		/**
 		 * Регионы
