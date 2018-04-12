@@ -215,4 +215,43 @@ define(['../src/pilot'], function (Pilot) {
 			assert.deepEqual(query, {find: 'foo'});
 		});
 	});
+
+	QUnit.promiseTest('race condition', function (assert) {
+		var log = [];
+		var loader = new Pilot.Loader({
+			value: function (req) {
+				return sleep(req.params.time);
+			}
+		}, {
+			persist: true,
+			processing: function (req, model) {
+				log.push(model.value)
+				return model;
+			},
+		})
+		var race = Pilot.create({
+			model: loader,
+			'#index': {url: '/:time'}
+		});
+
+		race.nav('/100');
+		race.nav('/50');
+		race.nav('/80');
+
+		setTimeout(function () {
+			loader.fetch();
+		}, 60);
+
+		return sleep(110).then(function () {
+			assert.deepEqual(log, ['80']);
+		});
+	});
+
+	function sleep(time) {
+		return new Promise(function (resolve) {
+			setTimeout(function () {
+				resolve(time);
+			}, time)
+		})
+	}
 });
