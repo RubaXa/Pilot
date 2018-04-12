@@ -183,7 +183,7 @@ const modelLoader = new Pilot.Loader({
 
   // Обработка ошибки при загрузки модели
   processingModelError(modelName, error, req) {
-    return Promise.resolve({defaultData: 123}); // если undefined для reject
+    return Promise.resolve({defaultData: 123}); // или undefined для reject
   },
 
   // Финальная обработка полученных данных
