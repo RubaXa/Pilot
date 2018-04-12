@@ -140,7 +140,7 @@ define(['./match'], function (match, Emitter) {
 
 						return models;
 					} else {
-						return _this._lastPromise;
+						return null;
 					}
 				})
 			;

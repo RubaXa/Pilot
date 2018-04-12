@@ -237,7 +237,8 @@ define(['../src/pilot'], function (Pilot) {
 		race.nav('/100');
 		race.nav('/50');
 		race.nav('/80');
-		race.nav('/50');
+		race.nav('/30');
+		race.nav('/80');
 
 		setTimeout(function () {
 			loader.fetch();
