@@ -177,12 +177,12 @@ const modelLoader = new Pilot.Loader({
   persist: true,
 
   // Обработку данных загруженной модели
-  processingModel(modelName, modelData, req) {
+  processingModel(modelName, modelData, req, models) {
     return {...modelData, pathed: true}; // or Promise
   },
 
   // Обработка ошибки при загрузки модели
-  processingModelError(modelName, error, req) {
+  processingModelError(modelName, error, req, models) {
     return Promise.resolve({defaultData: 123}); // или undefined для reject
   },
 

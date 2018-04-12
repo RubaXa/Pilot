@@ -572,13 +572,13 @@ define('src/loader',['./match'], function (match, Emitter) {
 					})
 						.then(function (data) {
 							if (_options.processingModel) {
-								data = _options.processingModel(name, data, req);
+								data = _options.processingModel(name, data, req, models);
 							}
 							return data;
 						})
 						.catch(function (err) {
 							if (_options.processingModelError) {
-								var p = _options.processingModelError(name, err, req);
+								var p = _options.processingModelError(name, err, req, models);
 								if (p !== null) {
 									return p;
 								}
