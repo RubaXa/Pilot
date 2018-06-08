@@ -909,12 +909,15 @@
 			}
 		}
 
-		url = url.substr(0, 7) + url.substr(7).replace(/\/+/g, '/');
-
 		var
 			  search	= (url.split('?')[1]||'').replace(/#.*/, '')
 			, query		= _parseQueryString(search)
-			, path		= url.replace(_rrclean, '')
+		;
+
+		url = url.substr(0, 7) + url.substr(7).replace(/\/+/g, '/');
+
+		var
+			   path		= url.replace(_rrclean, '')
 			, _this		= this
 		;
 
