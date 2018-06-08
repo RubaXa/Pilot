@@ -914,10 +914,9 @@
 			, query		= _parseQueryString(search)
 		;
 
-		url = url.substr(0, 7) + url.substr(7).replace(/\/+/g, '/');
-
 		var
-			   path		= url.replace(_rrclean, '')
+			  path		= url.replace(_rrclean, '')
+			, hash		= url.replace(/^.*?#/, ''),
 			, _this		= this
 		;
 
@@ -926,13 +925,15 @@
 			search	= '?' + search;
 		}
 
+		url = url.substr(0, 7) + url.substr(7).split('?')[0].replace(/\/+/g, '/') + (search || '') + (hash ? '#' + hash : '');
+
 		_this.url		= url;
 		_this.href		= url;
 		_this.query		= query;
 		_this.search	= search;
 		_this.path		= path;
 		_this.pathname	= path;
-		_this.hash		= url.replace(/^.*?#/, '');
+		_this.hash		= hash;
 		_this.params	= {};
 		_this.referrer	= referrer;
 		_this.router	= router;
