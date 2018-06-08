@@ -1,28 +1,28 @@
 {
-	"name": "pilotjs",
-	"version": "1.7.0",
-	"devDependencies": {
-		"grunt": "~0.4.0",
-		"grunt-version": "*",
-		"grunt-contrib-jshint": "~0.2.0",
-		"grunt-contrib-qunit": "*",
-		"grunt-contrib-uglify": "*"
-	},
-	"description": "Multifunction JavaScript router.",
-	"main": "Pilot.js",
-	"scripts": {
-		"test": "grunt test"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/rubaxa/Pilot.git"
-	},
-	"keywords": [
-		"Pilot",
-		"router",
-		"routing",
-		"route"
-	],
-	"author": "Konstantin Lebedev <ibnRubaXa@gmail.com>",
-	"license": "MIT"
+  "name": "pilotjs",
+  "version": "1.7.1",
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "grunt-version": "*",
+    "grunt-contrib-jshint": "~0.2.0",
+    "grunt-contrib-qunit": "*",
+    "grunt-contrib-uglify": "*"
+  },
+  "description": "Multifunction JavaScript router.",
+  "main": "Pilot.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rubaxa/Pilot.git"
+  },
+  "keywords": [
+    "Pilot",
+    "router",
+    "routing",
+    "route"
+  ],
+  "author": "Konstantin Lebedev <ibnRubaXa@gmail.com>",
+  "license": "MIT"
 }
