@@ -916,7 +916,7 @@
 
 		var
 			  path		= url.replace(_rrclean, '')
-			, hash		= url.replace(/^.*?#/, ''),
+			, hash		= url.replace(/^.*?#/, '')
 			, _this		= this
 		;
 
