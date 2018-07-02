@@ -125,17 +125,19 @@ Current route.
 
 ---
 
-#### go(id[, params[, query]]):`Promise`
+#### go(id[, params[, query[, details]]]):`Promise`
 
  - **id**:`string` — route id
- - **params**:`object` — route parametrs (optional)
- - **query**:`object|inherit` — route GET-query parametrs (optional)
+ - **params**:`object` — route parameters (optional)
+ - **query**:`object|inherit` — route GET-query parameters (optional)
+ - **details**:`object` - route navigation details (options)
 
 ---
 
-#### nav(url):`Promise`
+#### nav(url[, details]):`Promise`
 
  - **url**:`string`
+ - **details**:`object` - route navigation details (options)
 
 ---
 

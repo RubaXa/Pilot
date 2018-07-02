@@ -248,6 +248,29 @@ define(['../src/pilot'], function (Pilot) {
 		});
 	});
 
+	QUnit.promiseTest('force', function (assert) {
+		var navigated = 0;
+
+		var handleRoute = function () {
+			navigated++;
+		};
+
+		return app.go('#letters', {type: 'inbox'}).then(function () {
+			app.on('route', handleRoute);
+
+			// Сейчас не перейдёт
+			return app.go('#letters', {type: 'inbox'});
+		}).then(function () {
+			assert.equal(navigated, 0);
+
+			// А сейчас перейдёт
+			return app.go('#letters', {type: 'inbox'}, null, {force: true});
+		}).then(function () {
+			assert.equal(navigated, 1);
+			app.off('route', handleRoute);
+		});
+	});
+
 	function sleep(time) {
 		return new Promise(function (resolve) {
 			setTimeout(function () {

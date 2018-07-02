@@ -17,7 +17,8 @@
 							});
 						})(typeof define === 'function' && define.amd ? define : function (deps, callback) {
 							window.Pilot = callback(window.Emitter);
-						}, function (define) {define('src/querystring',[], function () {
+						}, function (define) {
+define('src/querystring',[], function () {
 	'use strict';
 
 	var encodeURIComponent = window.encodeURIComponent;
@@ -1471,7 +1472,7 @@ define('src/pilot.js',[
 		/**
 		 * Навигация по маршруту
 		 * @param   {string|URL|Pilot.Request}  href
-		 * @param   {{initiator: string, replaceState: boolean}}  [details]
+		 * @param   {{initiator: string, replaceState: boolean, force: boolean}}  [details]
 		 * @returns {Promise}
 		 */
 		nav: function (href, details) {
@@ -1482,13 +1483,12 @@ define('src/pilot.js',[
 				_promise = _this._promise,
 				currentRoute;
 
+			details = details || {};
 
-			// URL должен отличаться от активного
-			if (_this.activeUrl.href !== url.href) {
+			// URL должен отличаться от активного, либо если передали флаг force
+			if (_this.activeUrl.href !== url.href || details.force) {
 				// Создаем объект реквеста и дальше с ним работаем
 				req = new Request(url, _this.request.href, _this);
-
-				details = details || {};
 
 				// Находим нужный нам маршрут
 				currentRoute = routes.find(function (/** Pilot.Route */item) {
