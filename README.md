@@ -65,7 +65,7 @@ router.route.getUrl({type: 'user', detail: 123}); // '/user/123';
 ---
 
 
-### `Pilot` livecycle
+### `Pilot` lifecycle
 
 #### beforeroute
 
