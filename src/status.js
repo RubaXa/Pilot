@@ -27,7 +27,7 @@ define([], function () {
 	 * @return {Pilot.Status}
 	 */
 	Status.from = function (value) {
-		if (value.status) {
+		if (value && value.status) {
 			value = new Status(value.status, value);
 		}
 		else if (!value || !value.code) {

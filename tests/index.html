@@ -63,7 +63,7 @@
 
 		requirejs.config({
 			deps: ['Promise'],
-			baseUrl: window.location.pathname.split('/').slice(0, -2).join('/'),
+			baseUrl: window.location.pathname.split('/').slice(0, -2).join('/') || '/',
 			paths: {
 				Promise: 'vendors/Promise',
 				Emitter: 'vendors/Emitter'

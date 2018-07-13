@@ -17,8 +17,7 @@
 							});
 						})(typeof define === 'function' && define.amd ? define : function (deps, callback) {
 							window.Pilot = callback(window.Emitter);
-						}, function (define) {
-define('src/querystring',[], function () {
+						}, function (define) {define('src/querystring',[], function () {
 	'use strict';
 
 	var encodeURIComponent = window.encodeURIComponent;
@@ -1193,7 +1192,7 @@ define('src/status',[], function () {
 	 * @return {Pilot.Status}
 	 */
 	Status.from = function (value) {
-		if (value.status) {
+		if (value && value.status) {
 			value = new Status(value.status, value);
 		}
 		else if (!value || !value.code) {
@@ -1341,6 +1340,7 @@ define('src/pilot.js',[
 ) {
 	'use strict';
 
+	var aboutBlankUrl = new URL('about:blank')
 	var resolvedPromise = Promise.resolve();
 
 
@@ -1425,7 +1425,7 @@ define('src/pilot.js',[
 		 * Активный URL
 		 * @type {URL}
 		 */
-		this.activeUrl = new URL('about:blank');
+		this.activeUrl = aboutBlankUrl;
 
 
 		/**
@@ -1580,6 +1580,7 @@ define('src/pilot.js',[
 							}
 
 							_this._promise = null;
+							_this.activeUrl = aboutBlankUrl;
 							_this._reject(Status.from(err));
 
 							return Promise.reject(err);

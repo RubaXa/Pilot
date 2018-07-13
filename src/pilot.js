@@ -19,6 +19,7 @@ define([
 ) {
 	'use strict';
 
+	var aboutBlankUrl = new URL('about:blank')
 	var resolvedPromise = Promise.resolve();
 
 
@@ -103,7 +104,7 @@ define([
 		 * Активный URL
 		 * @type {URL}
 		 */
-		this.activeUrl = new URL('about:blank');
+		this.activeUrl = aboutBlankUrl;
 
 
 		/**
@@ -258,6 +259,7 @@ define([
 							}
 
 							_this._promise = null;
+							_this.activeUrl = aboutBlankUrl;
 							_this._reject(Status.from(err));
 
 							return Promise.reject(err);

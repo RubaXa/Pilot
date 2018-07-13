@@ -54,6 +54,15 @@ define(['../src/pilot'], function (Pilot) {
 			}
 		},
 
+		'#fail': {
+			url: './fail/:id',
+			model: {
+				failData: function (req) {
+					return req.params.id == 1 ? Promise.reject() : Promise.resolve('OK');
+				}
+			}
+		},
+
 		'#folder': {
 			url: '/:folder?'
 		},
@@ -269,6 +278,26 @@ define(['../src/pilot'], function (Pilot) {
 		}).then(function () {
 			assert.equal(navigated, 1);
 			app.off('route', handleRoute);
+		});
+	});
+
+	QUnit.promiseTest('model/fail', function (assert) {
+		var log = [];
+		var rnd = Math.random();
+		app.on('beforeroute route-fail route-end', function (evt) {
+			log.push(evt.type)
+		});
+
+		return app.go('#fail', {id: 1}).catch(function () {
+			return app.go('#fail', {id: 1}).catch(function () {
+				return rnd;
+			});
+		}).then(function (x) {
+			assert.equal(x, rnd);
+			assert.deepEqual(log, [
+				'beforeroute', 'routefail', 'routeend',
+				'beforeroute', 'routefail', 'routeend',
+			]);
 		});
 	});
 
