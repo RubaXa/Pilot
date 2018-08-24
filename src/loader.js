@@ -49,7 +49,7 @@ define(['./match'], function (match, Emitter) {
 
 
 	Loader.prototype = /** @lends Pilot.Loader# */{
-		consturctor: Loader,
+		constructor: Loader,
 
 
 		defaults: function () {
@@ -62,8 +62,11 @@ define(['./match'], function (match, Emitter) {
 			return defaults;
 		},
 
+		fetch: function(req, prevModel) {
+			return this.dispatch(req, {type: Loader.ACTION_FETCH}, prevModel);
+		},
 
-		fetch: function (req) {
+		dispatch: function (req, action, prevModel) {
 			var _this = this;
 
 			if (req == null) {
@@ -89,7 +92,7 @@ define(['./match'], function (match, Emitter) {
 				if (idx === void 0) {
 					idx = new Promise(function (resolve) {
 						if (model.fetch && model.match(req.route.id, req)) {
-							resolve(model.fetch(req, waitFor));
+							resolve(model.fetch(req, waitFor, action, prevModel));
 						} else {
 							resolve(model.defaults);
 						}
@@ -196,6 +199,7 @@ define(['./match'], function (match, Emitter) {
 		}
 	};
 
+	Loader.ACTION_FETCH = 'FETCH';
 
 	// Export
 	return Loader;
