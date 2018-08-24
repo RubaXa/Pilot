@@ -1,7 +1,6 @@
 define(['./match'], function (match, Emitter) {
 	'use strict';
 
-
 	var _cast = function (name, model) {
 		if (typeof model === 'function') {
 			model = { fetch: model };
@@ -42,6 +41,9 @@ define(['./match'], function (match, Emitter) {
 		this._lastReq = null;
 		this._fetchPromises = {};
 
+		// Инкрементивный ID запросов нужен для performance
+		this._lastReqId = 0;
+
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
 		}, this);
@@ -49,7 +51,7 @@ define(['./match'], function (match, Emitter) {
 
 
 	Loader.prototype = /** @lends Pilot.Loader# */{
-		consturctor: Loader,
+		constructor: Loader,
 
 
 		defaults: function () {
@@ -62,9 +64,24 @@ define(['./match'], function (match, Emitter) {
 			return defaults;
 		},
 
-
 		fetch: function (req) {
+			return this._loadSources(req, {type: Loader.ACTION_NAVIGATE});
+		},
+
+		dispatch: function (action) {
+			return this._loadSources(this._lastReq, action);
+		},
+
+		_loadSources: function (req, action) {
 			var _this = this;
+			// Нужно для отметок в performance
+			var requestId = _this._lastReqId++;
+
+			// Action по умолчанию
+			action = action && typeof action === 'object' ? action : {type: 'NONE'};
+
+			var measureName = 'PilotJS ' + action.type + ' ' + requestId;
+			performance && performance.mark('start:' + measureName);
 
 			if (req == null) {
 				req = _this._lastReq;
@@ -89,7 +106,7 @@ define(['./match'], function (match, Emitter) {
 				if (idx === void 0) {
 					idx = new Promise(function (resolve) {
 						if (model.fetch && model.match(req.route.id, req)) {
-							resolve(model.fetch(req, waitFor));
+							resolve(model.fetch(req, waitFor, action, _this._lastModels));
 						} else {
 							resolve(model.defaults);
 						}
@@ -132,18 +149,24 @@ define(['./match'], function (match, Emitter) {
 							models[name] = results[models[name]];
 						});
 
-						_options.processing && (models = _options.processing(req, models));
+						_options.processing && (models = _options.processing(req, action, models));
 
 						if (_this._bindedRoute) {
 							_this._bindedRoute.model = _this.extract(models);
 						}
+
+						_this._lastModels = models;
+						_this._measurePerformance(measureName);
 
 						return models;
 					} else {
 						return null;
 					}
 				})
-			;
+				.catch(function (error) {
+					_this._measurePerformance(measureName);
+					throw error;
+				});
 
 			if (_options.persist) {
 				_fetchPromises[_persistKey] = _promise;
@@ -158,6 +181,17 @@ define(['./match'], function (match, Emitter) {
 			_this._lastPromise = _promise;
 
 			return _promise;
+		},
+
+
+		_measurePerformance: function (measureName) {
+			if (performance) {
+				performance.mark('end:' + measureName);
+				performance.measure(measureName, 'start:' + measureName, 'end:' + measureName);
+
+				performance.clearMarks('start:' + measureName);
+				performance.clearMarks('end:' + measureName);
+			}
 		},
 
 
@@ -196,6 +230,7 @@ define(['./match'], function (match, Emitter) {
 		}
 	};
 
+	Loader.ACTION_NAVIGATE = 'NAVIGATE';
 
 	// Export
 	return Loader;
