@@ -519,7 +519,8 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 		this._lastReq = null;
 		this._fetchPromises = {};
-		// Инкрементивный ID последнего запроса
+
+		// Инкрементивный ID запросов нужен для performance
 		this._lastReqId = 0;
 
 		this.names.forEach(function (name) {
@@ -552,15 +553,13 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 		_loadSources: function (req, action) {
 			var _this = this;
+			// Нужно для отметок в performance
+			var requestId = _this._lastReqId++;
 
 			// Action по умолчанию
 			action = action && typeof action === 'object' ? action : {type: 'NONE'};
-			// Инкрементивный ID экшна
-			Object.defineProperty(action, '__incrementalId', {
-				value: _this._lastReqId++
-			});
 
-			var measureName = 'PilotJS ' + action.type + ' ' + action.__incrementalId;
+			var measureName = 'PilotJS ' + action.type + ' ' + requestId;
 			performance && performance.mark('start:' + measureName);
 
 			if (req == null) {
@@ -571,7 +570,7 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 			var _index = _this._index;
 			var _options = _this._options;
-			var _persistKey = req.toString() + action.type;
+			var _persistKey = req.toString();
 			var _fetchPromises = _this._fetchPromises;
 
 			_this._lastKey = _persistKey;
@@ -629,17 +628,13 @@ define('src/loader',['./match'], function (match, Emitter) {
 							models[name] = results[models[name]];
 						});
 
-						// Обрабатываем результат запроса только если это был последний action
-						// if (action.__incrementalId === _this._lastReqId) {
-							_options.processing && (models = _options.processing(req, action, models));
+						_options.processing && (models = _options.processing(req, action, models));
 
-							if (_this._bindedRoute) {
-								_this._bindedRoute.model = _this.extract(models);
-							}
+						if (_this._bindedRoute) {
+							_this._bindedRoute.model = _this.extract(models);
+						}
 
-							_this._lastModels = models;
-						// }
-
+						_this._lastModels = models;
 						_this._measurePerformance(measureName);
 
 						return models;
