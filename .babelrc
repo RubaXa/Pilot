@@ -1,0 +1,14 @@
+{
+  "plugins": [
+	"transform-amd-to-commonjs",
+	[
+	  "transform-string-literal-replace", {
+	  "patterns": {
+		"Emitter": "../vendors/Emitter",
+		"Promise": "../vendors/Promise"
+	  }
+	}
+	]
+  ],
+  "sourceMaps": "both"
+}
