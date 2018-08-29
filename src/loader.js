@@ -67,11 +67,11 @@ define(['./match'], function (match, Emitter) {
 		},
 
 		fetch: function (req) {
-			return this._loadSources(req, {type: Loader.ACTION_NAVIGATE});
+			return this._executeAction(req, {type: Loader.ACTION_NAVIGATE});
 		},
 
 		dispatch: function (action) {
-			return this._loadSources(this._lastReq, action);
+			return this._executeAction(this._lastReq, action);
 		},
 
 		makeWaitFor: function (models, index, req, action, options, promises) {
