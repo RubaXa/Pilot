@@ -91,13 +91,13 @@ define(['./match'], function (match, Emitter) {
 					})
 						.then(function (data) {
 							if (options.processingModel) {
-								data = options.processingModel(name, data, req, models);
+								data = options.processingModel(name, data, req, models, action);
 							}
 							return data;
 						})
 						.catch(function (err) {
 							if (options.processingModelError) {
-								var p = options.processingModelError(name, err, req, models);
+								var p = options.processingModelError(name, err, req, models, action);
 								if (p !== null) {
 									return p;
 								}
@@ -138,7 +138,8 @@ define(['./match'], function (match, Emitter) {
 				return _fetchPromises[_persistKey];
 			}
 
-			var measureName = 'PilotJS ' + action.type + ' ' + requestId;
+			var priorityName = action.priority === Loader.PRIORITY_LOW ? 'LOW' : 'HIGH';
+			var measureName = 'PilotJS [' + priorityName + '] ' + action.type + ' ' + requestId;
 			performance && performance.mark('start:' + measureName);
 
 			// Имена источников
@@ -225,6 +226,9 @@ define(['./match'], function (match, Emitter) {
 					.then(function () {
 						// Запрос выполним не с последним req от данного, а с переданным
 						// Если req = null, то executeAction возьмёт последний запрос на момент выполнения
+						return _this._executeAction(req, action);
+					})
+					.catch(function () {
 						return _this._executeAction(req, action);
 					});
 			}
