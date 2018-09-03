@@ -131,7 +131,7 @@ define(['./match'], function (match, Emitter) {
 
 			var _index = _this._index;
 			var _options = _this._options;
-			var _persistKey = req.toString() + action.type;
+			var _persistKey = req.toString() + action.type + action.uid;
 			var _fetchPromises = _this._fetchPromises;
 
 			if (_options.persist && _fetchPromises[_persistKey]) {
