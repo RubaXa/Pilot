@@ -219,17 +219,17 @@ define(['./match'], function (match, Emitter) {
 
 			// Если сейчас есть запущенный экшн
 			// И приоритет нового экшна меньше, чем приоритет запущенного
-			if (_this._activePriority !== null && action.priority < this._activePriority) {
+			if (_this._activePriority !== null && priority < this._activePriority) {
 				// Ничего не выполняем сейчас
 				// Вместо этого попробуем выполнить экшн с низким приоритетом ещё раз, после выполнения текущего экшна
 				return _this._lastPromise
 					.then(function () {
 						// Запрос выполним не с последним req от данного, а с переданным
 						// Если req = null, то executeAction возьмёт последний запрос на момент выполнения
-						return _this._executeAction(req, action);
+						return _this._executeActionAsync(req, action);
 					})
 					.catch(function () {
-						return _this._executeAction(req, action);
+						return _this._executeActionAsync(req, action);
 					});
 			}
 
@@ -245,6 +245,16 @@ define(['./match'], function (match, Emitter) {
 					_this._activePriority = null;
 					throw error;
 				})
+		},
+
+		_executeActionAsync: function(req, action) {
+			var _this = this;
+
+			return new Promise(function (resolve) {
+				window.setTimeout(function () {
+					resolve(_this._executeAction(req, action));
+				}, 10);
+			});
 		},
 
 
