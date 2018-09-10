@@ -552,14 +552,11 @@ define('src/loader',['./match'], function (match, Emitter) {
 		},
 
 		fetch: function (req) {
-			return this._executeAction(req, {
-				type: Loader.ACTION_NAVIGATE,
-				priority: Loader.PRIORITY_LOW
-			});
+			return this._executeAction(req, {type: Loader.ACTION_NAVIGATE});
 		},
 
 		dispatch: function (action) {
-			return this._executeAction(this._lastReq, action);
+			return this._executeAction(null, action);
 		},
 
 		makeWaitFor: function (models, index, req, action, options, promises) {
@@ -736,6 +733,7 @@ define('src/loader',['./match'], function (match, Emitter) {
 		},
 
 		_handleActionEnd: function() {
+			var _this = this;
 			_this._highPriorityQueries--;
 
 			// Резолвим high priority promise, если закончили выполнять экшн с высоким приоритетом
