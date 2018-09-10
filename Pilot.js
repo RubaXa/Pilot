@@ -524,6 +524,12 @@ define('src/loader',['./match'], function (match, Emitter) {
 		this._lastReqId = 0;
 		// Приоритет текущего выполняемого экшна
 		this._activePriority = null;
+		// Счётчик выполняемых запросов с высоким приоритетом
+		// Запросы с низким приоритетом будут выполняться только после того, как этот счётчик станет 0
+		this._highPriorityQueries = 0;
+		// Если есть запросы с высоким приоритетом, этот промис разрезолвится после завершения последнего запроса
+		this._highPriorityPromise = null;
+		this._highPriorityPromiseResolve = null;
 
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
@@ -696,34 +702,44 @@ define('src/loader',['./match'], function (match, Emitter) {
 			// Приоритет действия
 			var priority = action.priority == null ? Loader.PRIORITY_HIGH : action.priority;
 
-			// Если сейчас есть запущенный экшн
-			// И приоритет нового экшна меньше, чем приоритет запущенного
-			if (_this._activePriority !== null && priority < this._activePriority) {
-				// Ничего не выполняем сейчас
-				// Вместо этого попробуем выполнить экшн с низким приоритетом ещё раз, после выполнения текущего экшна
-				return _this._lastPromise
-					.then(function () {
-						// Запрос выполним не с последним req от данного, а с переданным
-						// Если req = null, то executeAction возьмёт последний запрос на момент выполнения
-						return _this._executeActionAsync(req, action);
-					})
-					.catch(function () {
-						return _this._executeActionAsync(req, action);
+			if (priority === Loader.PRIORITY_LOW && _this._highPriorityQueries) {
+				return _this._highPriorityPromise
+					.then(function() {
+						// Попробуем сделать действие ещё раз после выполнения всех действий с более высоким приоритетом
+						_this._executeActionAsync(req, action);
 					});
 			}
 
 			// Выставляем активный приоритет
-			_this._activePriority = priority;
+			_this._highPriorityQueries++;
 
-			return this._loadSources(_req, action)
-				.then(function (result) {
-					_this._activePriority = null;
-					return result;
-				})
-				.catch(function (error) {
-					_this._activePriority = null;
-					throw error;
-				})
+			if (!_this._highPriorityPromise) {
+				_this._highPriorityPromise = new Promise(function (resolve) {
+					_this._highPriorityPromiseResolve = resolve;
+				});
+			}
+
+			// Отправляем экшн выполняться
+			var actionPromise = this._loadSources(_req, action);
+
+			actionPromise
+				// Ошибку на этом этапе уже обработали
+				.catch(function () {})
+				.then(function () {
+					_this._handleActionEnd();
+				});
+
+			return actionPromise;
+		},
+
+		_handleActionEnd: function() {
+			_this._highPriorityQueries--;
+
+			// Резолвим high priority promise, если закончили выполнять экшн с высоким приоритетом
+			if (!_this._highPriorityQueries) {
+				_this._highPriorityPromise = null;
+				_this._highPriorityPromiseResolve();
+			}
 		},
 
 		_executeActionAsync: function(req, action) {
