@@ -552,7 +552,10 @@ define('src/loader',['./match'], function (match, Emitter) {
 		},
 
 		fetch: function (req) {
-			return this._executeAction(req, {type: Loader.ACTION_NAVIGATE});
+			return this._executeAction(req, {
+				type: Loader.ACTION_NAVIGATE,
+				priority: Loader.PRIORITY_LOW
+			});
 		},
 
 		dispatch: function (action) {
