@@ -51,6 +51,8 @@ define(['./match'], function (match, Emitter) {
 		// Если есть запросы с высоким приоритетом, этот промис разрезолвится после завершения последнего запроса
 		this._highPriorityPromise = null;
 		this._highPriorityPromiseResolve = null;
+		// Приоритет последнего экшна
+		this._lastPriority = Loader.PRIORITY_LOW;
 		// Дебаг-режим, выводит в performance все экшны
 		this._debug = false;
 
@@ -228,7 +230,10 @@ define(['./match'], function (match, Emitter) {
 			// Приоритет действия
 			var priority = action.priority == null ? Loader.PRIORITY_HIGH : action.priority;
 
-			if (priority === Loader.PRIORITY_LOW && _this._highPriorityQueries) {
+			if (
+				_this._highPriorityQueries &&
+				(priority !== _this._lastPriority || priority === Loader.PRIORITY_LOW)
+			) {
 				return _this._highPriorityPromise
 					.then(function() {
 						// Попробуем сделать действие ещё раз после выполнения всех действий с более высоким приоритетом
@@ -238,12 +243,17 @@ define(['./match'], function (match, Emitter) {
 
 			// Выставляем активный приоритет
 			_this._highPriorityQueries++;
+			_this._lastPriority = priority;
 
 			if (!_this._highPriorityPromise) {
-				_this._highPriorityPromise = new Promise(function (resolve) {
-					_this._highPriorityPromiseResolve = resolve;
-				});
+				_this._highPriorityPromise = Promise.resolve();
 			}
+
+			_this._highPriorityPromise = _this._highPriorityPromise.then(
+				new Promise(function (resolve) {
+					_this._highPriorityPromiseResolve = resolve;
+				})
+			);
 
 			// Отправляем экшн выполняться
 			var actionPromise = this._loadSources(_req, action);

@@ -159,16 +159,16 @@ describe('Loader', () => {
 		const log = [];
 		const loader = await createSleepyLoggingLoader(log);
 
-		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_HIGH});
-		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_HIGH});
+		loader.dispatch({timeout: 50, priority: Loader.PRIORITY_HIGH});
+		await loader.dispatch({timeout: 40, priority: Loader.PRIORITY_HIGH});
+
 		loader.dispatch({timeout: 30, priority: Loader.PRIORITY_LOW});
+		await sleep(15);
 
-		await sleep(40);
 		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_HIGH});
+		await sleep(60);
 
-		await sleep(50);
-
-		expect(log).toEqual(['timeout 10', 'timeout 20', 'timeout 30', 'timeout 10']);
+		expect(log).toEqual(['timeout 40', 'timeout 50', 'timeout 30', 'timeout 10']);
 	});
 
 
