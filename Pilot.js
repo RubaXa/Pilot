@@ -530,6 +530,8 @@ define('src/loader',['./match'], function (match, Emitter) {
 		// Если есть запросы с высоким приоритетом, этот промис разрезолвится после завершения последнего запроса
 		this._highPriorityPromise = null;
 		this._highPriorityPromiseResolve = null;
+		// Дебаг-режим, выводит в performance все экшны
+		this._debug = false;
 
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
@@ -625,7 +627,10 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 			var priorityName = action.priority === Loader.PRIORITY_LOW ? 'LOW' : 'HIGH';
 			var measureName = 'PilotJS [' + priorityName + '] ' + action.type + ' ' + requestId;
-			performance && performance.mark('start:' + measureName);
+
+			if (_this._debug && window.performance) {
+				window.performance.mark('start:' + measureName);
+			}
 
 			// Имена источников
 			var names = _this.names;
@@ -755,12 +760,12 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 
 		_measurePerformance: function (measureName) {
-			if (performance) {
-				performance.mark('end:' + measureName);
-				performance.measure(measureName, 'start:' + measureName, 'end:' + measureName);
+			if (this._debug && window.performance) {
+				window.performance.mark('end:' + measureName);
+				window.performance.measure(measureName, 'start:' + measureName, 'end:' + measureName);
 
-				performance.clearMarks('start:' + measureName);
-				performance.clearMarks('end:' + measureName);
+				window.performance.clearMarks('start:' + measureName);
+				window.performance.clearMarks('end:' + measureName);
 			}
 		},
 
@@ -797,6 +802,14 @@ define('src/loader',['./match'], function (match, Emitter) {
 		bind: function (route, model) {
 			route.model = this.extract(model);
 			this._bindedRoute = route;
+		},
+
+		/**
+		 * Включаем / выключаем дебаг-режим
+		 * @param {boolean} debug
+		 */
+		setDebug(debug) {
+			this._debug = !!debug;
 		}
 	};
 
