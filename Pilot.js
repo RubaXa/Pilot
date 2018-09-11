@@ -522,8 +522,6 @@ define('src/loader',['./match'], function (match, Emitter) {
 
 		// Инкрементивный ID запросов нужен для performance
 		this._lastReqId = 0;
-		// Приоритет текущего выполняемого экшна
-		this._activePriority = null;
 		// Счётчик выполняемых запросов с высоким приоритетом
 		// Запросы с низким приоритетом будут выполняться только после того, как этот счётчик станет 0
 		this._highPriorityQueries = 0;
@@ -556,7 +554,10 @@ define('src/loader',['./match'], function (match, Emitter) {
 		},
 
 		fetch: function (req) {
-			return this._executeAction(req, {type: Loader.ACTION_NAVIGATE});
+			return this._executeAction(req, {
+				type: Loader.ACTION_NAVIGATE,
+				priority: Loader.PRIORITY_LOW
+			});
 		},
 
 		dispatch: function (action) {
