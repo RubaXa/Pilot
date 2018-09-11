@@ -1,12 +1,12 @@
-define(['../src/loader'], function (Loader) {
-	'use strict';
+/* global describe, beforeEach, test, expect */
 
-	QUnit.module('Loader');
+const Loader = require('../src/loader');
 
+describe('Loader', () => {
 	var reqX = { route: { id: '#X' } },
 		reqY = { route: { id: '#Y' } };
 
-	QUnit.test('defaults', function (assert) {
+	test('defaults', function () {
 		var loader = new Loader({
 			foo: function () {},
 			bar: {
@@ -14,12 +14,11 @@ define(['../src/loader'], function (Loader) {
 			}
 		});
 
-		assert.deepEqual(loader.defaults(), {foo: void 0, bar: 123});
+		expect(loader.defaults()).toEqual({foo: void 0, bar: 123});
 	});
 
 
-	QUnit.test('fetch', function (assert) {
-		var done = assert.async();
+	test('fetch', async () => {
 		var loader = new Loader({
 			foo: function () {
 				return 1
@@ -42,23 +41,17 @@ define(['../src/loader'], function (Loader) {
 			}
 		});
 
-
-		loader.fetch(reqX).then(function (models) {
-			assert.deepEqual(models, {foo: 1, bar: 2, baz: 3, qux: 6}, '#X');
+		await loader.fetch(reqX).then(function (models) {
+			expect(models).toEqual({foo: 1, bar: 2, baz: 3, qux: 6});
 
 			return loader.fetch(reqY).then(function (models) {
-				assert.deepEqual(models, {foo: 1, bar: 2, baz: -3, qux: -6}, '#Y');
-				done();
+				expect(models).toEqual({foo: 1, bar: 2, baz: -3, qux: -6});
 			});
-		})['catch'](function () {
-			assert.ok(false, 'fail');
-			done();
-		});
+		})
 	});
 
 
-	QUnit.test('extend', function (assert) {
-		var done = assert.async();
+	test('extend', async () => {
 		var loader = new Loader({
 			foo: {
 				value: 0,
@@ -77,38 +70,27 @@ define(['../src/loader'], function (Loader) {
 			}
 		});
 
-		return loader.fetch(reqX).then(function (models) {
-			assert.deepEqual(models, {foo: 1, bar: 123});
+		await loader.fetch(reqX).then(function (models) {
+			expect(models).toEqual({foo: 1, bar: 123});
 
 			return extLoader.fetch(reqY).then(function (models) {
-				assert.deepEqual(models, {foo: 2, bar: 321});
+				expect(models).toEqual({foo: 2, bar: 321});
 
 				return loader.fetch(reqY).then(function (models) {
-					assert.deepEqual(models, {foo: 3, bar: 123});
-					done();
+					expect(models).toEqual({foo: 3, bar: 123});
 				});
 			});
-		})['catch'](function () {
-			assert.ok(false);
-			done();
 		});
 	});
 
 
-	QUnit.test('fetch:error', function (assert) {
-		var done = assert.async();
+	test('fetch:error', async () => {
 		var loader = new Loader({
 			foo: function () {
 				throw "error";
 			}
 		});
 
-		return loader.fetch(reqX).then(function () {
-			assert.ok(false);
-			done();
-		})['catch'](function () {
-			assert.ok(true);
-			done();
-		});
+		expect(loader.fetch(reqX)).rejects;
 	});
 });
