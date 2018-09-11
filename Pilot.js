@@ -706,6 +706,15 @@ define('src/loader',['./match'], function (match, Emitter) {
 				_req = _this._lastReq;
 			}
 
+			// Если у нас стоит persist: true, то сначала проверим, что такой запрос уже есть
+			// См. тест 'dispatch with low priority and persist fires only once'
+			var _persistKey = _req.toString() + action.type + action.uid;
+			var _fetchPromises = _this._fetchPromises;
+
+			if (_this._options.persist && _fetchPromises[_persistKey]) {
+				return _fetchPromises[_persistKey];
+			}
+
 			// Приоритет действия
 			var priority = action.priority == null ? Loader.PRIORITY_HIGH : action.priority;
 
