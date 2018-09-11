@@ -246,7 +246,7 @@ define(['./match'], function (match, Emitter) {
 				return _this._highPriorityPromise
 					.then(function() {
 						// Попробуем сделать действие ещё раз после выполнения всех действий с более высоким приоритетом
-						_this._executeActionAsync(req, action);
+						return _this._executeActionAsync(req, action);
 					});
 			}
 
