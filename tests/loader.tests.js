@@ -155,6 +155,20 @@ describe('Loader', () => {
 	});
 
 
+	test('dispatch with low priority and persist fires only once', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log, {persist: true});
+
+		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_LOW});
+		await sleep(12);
+
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_LOW});
+		await sleep(100);
+
+		expect(log).toEqual(['timeout 20']);
+	});
+
+
 	test('dispatch high, high, low, high and no persist', async () => {
 		const log = [];
 		const loader = await createSleepyLoggingLoader(log);
