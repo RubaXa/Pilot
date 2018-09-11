@@ -2,9 +2,35 @@
 
 const Loader = require('../src/loader');
 
+const reqX = { route: { id: '#X' } };
+const reqY = { route: { id: '#Y' } };
+
+function sleep(milliseconds) {
+	return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+// Этот загрузчик любит спать и писать об этом в лог
+async function createSleepyLoggingLoader(log, {persist} = {persist: false}) {
+	const loader = new Loader({
+		// Этот "переход по маршруту" будет просто ждать нужное кол-во милилсекунд
+		data(request, waitFor, action) {
+			return sleep(action.timeout)
+				.then(() => `timeout ${action.timeout}`);
+		}
+	}, {
+		persist,
+		processing(request, action, models) {
+			log.push(models.data);
+		}
+	});
+
+	await loader.fetch(reqX);
+	log.length = 0;
+
+	return loader;
+}
+
 describe('Loader', () => {
-	var reqX = { route: { id: '#X' } },
-		reqY = { route: { id: '#Y' } };
 
 	test('defaults', function () {
 		var loader = new Loader({
@@ -48,6 +74,101 @@ describe('Loader', () => {
 				expect(models).toEqual({foo: 1, bar: 2, baz: -3, qux: -6});
 			});
 		})
+	});
+
+
+	test('dispatch with high priority and no persist', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log);
+
+		loader.dispatch({timeout: 20});
+		loader.dispatch({timeout: 10});
+
+		await sleep(30);
+
+		expect(log).toEqual(['timeout 10', 'timeout 20']);
+	});
+
+
+	test('dispatch with low priority and no persist', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log);
+
+		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_LOW});
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_LOW});
+
+		await sleep(100);
+
+		expect(log).toEqual(['timeout 20', 'timeout 10']);
+	});
+
+
+	test('dispatch low after high priority and no persist', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log);
+
+		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_HIGH});
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_LOW});
+
+		await sleep(100);
+
+		expect(log).toEqual(['timeout 20', 'timeout 10']);
+	});
+
+
+	test('dispatch high after low priority and no persist', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log);
+
+		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_LOW});
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_HIGH});
+
+		await sleep(100);
+
+		expect(log).toEqual(['timeout 20', 'timeout 10']);
+	});
+
+
+	test('dispatch with high priority and persist', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log, {persist: true});
+
+		loader.dispatch({timeout: 20});
+		loader.dispatch({timeout: 10});
+
+		await sleep(50);
+
+		expect(log).toEqual(['timeout 20']);
+	});
+
+
+	test('dispatch with low priority and persist', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log, {persist: true});
+
+		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_LOW});
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_LOW});
+
+		await sleep(100);
+
+		expect(log).toEqual(['timeout 20', 'timeout 10']);
+	});
+
+
+	test('dispatch high, high, low, high and no persist', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log);
+
+		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_HIGH});
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_HIGH});
+		loader.dispatch({timeout: 30, priority: Loader.PRIORITY_LOW});
+
+		await sleep(40);
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_HIGH});
+
+		await sleep(50);
+
+		expect(log).toEqual(['timeout 10', 'timeout 20', 'timeout 30', 'timeout 10']);
 	});
 
 

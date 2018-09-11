@@ -264,8 +264,8 @@ define(['./match'], function (match, Emitter) {
 
 			// Резолвим high priority promise, если закончили выполнять экшн с высоким приоритетом
 			if (!_this._highPriorityQueries) {
-				_this._highPriorityPromise = null;
 				_this._highPriorityPromiseResolve();
+				_this._highPriorityPromise = null;
 			}
 		},
 
