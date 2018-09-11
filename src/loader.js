@@ -12,6 +12,11 @@ define(['./match'], function (match, Emitter) {
 		return model;
 	};
 
+	// На коленке полифиллим setImmediate
+	var setImmediate = window.setImmediate || function setImmediateDummyPolyfillFromPilotJS(callback) {
+		setTimeout(callback, 0);
+	};
+
 	/**
 	 * @typedef  {object} LoaderOptions
 	 * @property {boolean}  persist
@@ -293,9 +298,9 @@ define(['./match'], function (match, Emitter) {
 			var _this = this;
 
 			return new Promise(function (resolve) {
-				window.setTimeout(function () {
+				setImmediate(function () {
 					resolve(_this._executeAction(req, action));
-				}, 10);
+				});
 			});
 		},
 
