@@ -354,7 +354,7 @@ define(['./match'], function (match, Emitter) {
 		 * Включаем / выключаем дебаг-режим
 		 * @param {boolean} debug
 		 */
-		setDebug(debug) {
+		setDebug: function (debug) {
 			this._debug = !!debug;
 		}
 	};
