@@ -1,126 +1,135 @@
-define(['../src/pilot'], function (Pilot) {
-	QUnit.module('Pilot');
+/* global describe, beforeEach, test, expect */
 
+const Pilot = require('../src/pilot');
+
+describe('Pilot', () => {
 	var TYPES = {
 		'inbox': 1,
 		'spam': 2
 	};
 
-	var app = window.app = Pilot.create({
-		'#idx': {
-			url: '/',
-			model: {
-				indexes: function () {
-					return 123;
-				}
-			},
-			'on:route': function () {
-				this.ok = true;
-			}
-		},
-
-		'#foo': {
-			url: '/:foo',
-
-			'*': {
-				'region': {
-					match: ['#baz'],
-					'on:routestart': function () {
-						this.foo = 'start';
-					},
-					'on:routeend': function () {
-						this.foo = 'end';
-					}
-				}
-			},
-
-			model: {
-				data: function (req) {
-					return req.params.foo;
-				}
-			},
-
-			'#bar': {
-				url: 'bar'
-			},
-
-			'#baz': {
-				url: './baz',
+	function createMockApp() {
+		return Pilot.create({
+			'#idx': {
+				url: '/',
 				model: {
-					subdata: function () {
-						return 'baz';
+					indexes: function () {
+						return 123;
 					}
+				},
+				'on:route': function () {
+					this.ok = true;
 				}
-			}
-		},
+			},
 
-		'#fail': {
-			url: './fail/:id',
-			model: {
-				failData: function (req) {
-					return req.params.id == 1 ? Promise.reject() : Promise.resolve('OK');
-				}
-			}
-		},
+			'#foo': {
+				url: '/:foo',
 
-		'#folder': {
-			url: '/:folder?'
-		},
-
-		'#letters': {
-			url: {
-				pattern: '/messages/(:type|folder/:id)?',
-				params: {
-					type: {
-						decode: function (value, req) {
-							req.params.id = TYPES[value] || 0;
-							return value;
-						}
-					},
-					id: {
-						validate: function (value) {
-							return value >= 0;
+				'*': {
+					'region': {
+						match: ['#baz'],
+						'on:routestart': function () {
+							this.foo = 'start';
 						},
-						decode: function (value, req) {
-							// req.params.type = ID_TYPES[value];
-							return parseInt(value, 10);
+						'on:routeend': function () {
+							this.foo = 'end';
 						}
 					}
 				},
-				toUrl: function (params, query, builder) {
-					if (!(params instanceof Object)) {
-						params = params >= 0 ? {id: params} : {type: params};
-					}
 
-					if (params.id === 0) {
-						params.type = 'inbox';
+				model: {
+					data: function (req) {
+						return req.params.foo;
 					}
+				},
 
-					return builder(params, query);
+				'#bar': {
+					url: 'bar'
+				},
+
+				'#baz': {
+					url: './baz',
+					model: {
+						subdata: function () {
+							return 'baz';
+						}
+					}
+				}
+			},
+
+			'#fail': {
+				url: './fail/:id',
+				model: {
+					failData: function (req) {
+						return req.params.id == 1 ? Promise.reject() : Promise.resolve('OK');
+					}
+				}
+			},
+
+			'#folder': {
+				url: '/:folder?'
+			},
+
+			'#letters': {
+				url: {
+					pattern: '/messages/(:type|folder/:id)?',
+					params: {
+						type: {
+							decode: function (value, req) {
+								req.params.id = TYPES[value] || 0;
+								return value;
+							}
+						},
+						id: {
+							validate: function (value) {
+								return value >= 0;
+							},
+							decode: function (value, req) {
+								// req.params.type = ID_TYPES[value];
+								return parseInt(value, 10);
+							}
+						}
+					},
+					toUrl: function (params, query, builder) {
+						if (!(params instanceof Object)) {
+							params = params >= 0 ? {id: params} : {type: params};
+						}
+
+						if (params.id === 0) {
+							params.type = 'inbox';
+						}
+
+						return builder(params, query);
+					}
 				}
 			}
-		}
-	});
+		});
+	}
 
 
-	QUnit.test('routes', function (assert) {
-		assert.deepEqual(app.routes.map(function (route) {
+	test('routes', () => {
+		const app = createMockApp();
+
+		expect(app.routes.map(function (route) {
 			return {id: route.id, url: route.url.pattern, group: route.__group__};
-		}), [
+		})).toEqual([
 			{"id": "#__root__", "url": "/", "group": true},
 			{"id": "#idx", "url": "/", "group": false},
 			{"id": "#foo", "url": "/:foo", "group": true},
 			{"id": "#bar", "url": "/:foo/bar", "group": false},
 			{"id": "#baz", "url": "/:foo/baz", "group": false},
+			{"id": "#fail", "url": "/fail/:id", "group": false},
 			{"id": "#folder", "url": "/:folder?", "group": false},
 			{"id": "#letters", "url": "/messages/(:type|folder/:id)?", "group": false}
-		], 'routes');
+		]);
 	});
 
-	QUnit.promiseTest('nav', function (assert) {
-		assert.equal(app['#foo'].regions.length, 1);
-		assert.deepEqual(app.model, {});
-		assert.deepEqual(app['#idx'].model, {indexes: void 0}, 'initial');
+	test('nav', async () => {
+		const app = createMockApp();
+
+		expect(app['#foo'].regions.length).toBe(1);
+		expect(app.model).toEqual({});
+		expect(app['#idx'].model).toEqual({indexes: void 0});
 
 		var replaceState = false;
 
@@ -128,78 +137,89 @@ define(['../src/pilot'], function (Pilot) {
 			replaceState = evt.details.replaceState;
 		});
 
-		return app.nav('/', {replaceState: true}).then(function () {
-			assert.ok(replaceState);
-			assert.equal(app.route.id, '#idx');
-			assert.equal(app.url.href, app.request.href);
-			assert.equal(app.request.path, '/');
+		// ------------------------------------------ //
+		await app.nav('/', {replaceState: true});
 
-			assert.ok(app['#idx'].active, '#idx.active');
-			assert.ok(app['#idx'].ok, '#idx.ok');
-			assert.ok(!app['#foo'].active, '#foo.active');
+		expect(replaceState).toBeTruthy();
+		expect(app.route.id).toBe('#idx');
+		expect(app.url.href).toBe(app.request.href);
+		expect(app.request.path).toBe('/');
 
-			assert.deepEqual(app.model, {}, 'app.model');
-			assert.deepEqual(app.route.model, {indexes: 123}, 'idx.model');
+		expect(app['#idx'].active).toBeTruthy();
+		expect(app['#idx'].ok).toBeTruthy();
+		expect(!app['#foo'].active).toBeTruthy();
 
-			return app.nav('/xxx/bar').then(function () {
-				assert.equal(app.route.id, '#bar');
-				assert.equal(app.request.path, '/xxx/bar');
+		expect(app.model).toEqual({});
+		expect(app.route.model).toEqual({indexes: 123});
 
-				return app.nav('/yyy/baz/').then(function () {
-					assert.ok(app['#foo'].active, '#foo.active');
-					assert.equal(app.route.id, '#baz');
-					assert.equal(app['#foo'].regions[0].foo, 'start');
+		// ------------------------------------------ //
+		await app.nav('/xxx/bar');
 
-					assert.deepEqual(app['#idx'].model, {indexes: void 0});
-					assert.deepEqual(app['#foo'].model, {data: 'yyy'});
-					assert.deepEqual(app.route.model, {data: 'yyy', subdata: 'baz'});
+		expect(app.route.id).toBe('#bar');
+		expect(app.request.path).toBe('/xxx/bar');
 
-					return app.nav('/zzz/bar/').then(function () {
-						assert.equal(app['#foo'].regions[0].foo, 'end');
-					});
-				});
-			});
-		});
+		// ------------------------------------------ //
+		await app.nav('/yyy/baz/');
+
+		expect(app['#foo'].active).toBeTruthy();
+		expect(app.route.id).toBe('#baz');
+		expect(app['#foo'].regions[0].foo).toBe('start');
+
+		expect(app['#idx'].model).toEqual({indexes: void 0});
+		expect(app['#foo'].model).toEqual({data: 'yyy'});
+		expect(app.route.model).toEqual({data: 'yyy', subdata: 'baz'});
+
+		// ------------------------------------------ //
+		await app.nav('/zzz/bar/');
+
+		expect(app['#foo'].regions[0].foo).toBe('end');
 	});
 
-	QUnit.test('getUrl', function (assert) {
-		assert.equal(app.getUrl('#folder'), '/');
-		assert.equal(app.getUrl('#folder', {folder: 0}), '/0/');
+	test('getUrl', () => {
+		const app = createMockApp();
 
-		assert.equal(app.getUrl('#letters'), '/messages/');
-		assert.equal(app.getUrl('#letters', {type: 'inbox'}), '/messages/inbox/');
-		assert.equal(app.getUrl('#letters', {id: 2}), '/messages/folder/2/');
-		assert.equal(app.getUrl('#letters', 'inbox'), '/messages/inbox/');
-		assert.equal(app.getUrl('#letters', 2), '/messages/folder/2/');
-		assert.equal(app.getUrl('#letters', 0), '/messages/inbox/');
-		assert.equal(app.getUrl('#letters', {id: 0}), '/messages/inbox/');
-		assert.equal(app.getUrl('#letters', {id: 0}, {foo: 'bar'}), '/messages/inbox/?foo=bar');
+		expect(app.getUrl('#folder')).toBe('/');
+		expect(app.getUrl('#folder', {folder: 0})).toBe('/0/');
+
+		expect(app.getUrl('#letters')).toBe('/messages/');
+		expect(app.getUrl('#letters', {type: 'inbox'})).toBe('/messages/inbox/');
+		expect(app.getUrl('#letters', {id: 2})).toBe('/messages/folder/2/');
+		expect(app.getUrl('#letters', 'inbox')).toBe('/messages/inbox/');
+		expect(app.getUrl('#letters', 2)).toBe('/messages/folder/2/');
+		expect(app.getUrl('#letters', 0)).toBe('/messages/inbox/');
+		expect(app.getUrl('#letters', {id: 0})).toBe('/messages/inbox/');
+		expect(app.getUrl('#letters', {id: 0}, {foo: 'bar'})).toBe('/messages/inbox/?foo=bar');
 	});
 
-	QUnit.promiseTest('getUrl: inherit query', function (assert) {
-		return app.nav('/?foo&bar=Y').then(function () {
-			assert.equal(app.getUrl('#letters', {}, 'inherit'), '/messages/?foo&bar=Y');
-		});
+	test('getUrl: inherit query', async () => {
+		const app = createMockApp();
+
+		await app.nav('/?foo&bar=Y');
+		expect(app.getUrl('#letters', {}, 'inherit')).toBe('/messages/?foo&bar=Y');
 	});
 
-	QUnit.promiseTest('letters', function (assert) {
-		return app.go('#letters', {type: 'inbox'}).then(function () {
-			assert.deepEqual(app.route.params, {id: 1, type: 'inbox'}, 'id + type');
+	test('letters', async () => {
+		const app = createMockApp();
 
-			return app.go('#letters', {id: 2}).then(function () {
-				assert.deepEqual(app.route.params, {id: 2}, 'id');
+		await app.go('#letters', {type: 'inbox'});
+		expect(app.route.params).toEqual({id: 1, type: 'inbox'});
 
-				return app.go('#letters', {id: 'str'}).then(function () {
-					assert.ok(false, 'catch')
-				}, function (err) {
-					assert.equal(err.code, 404);
-					assert.deepEqual(app.route.params, {id: 2}, '404');
-				});
-			});
-		});
+		await app.go('#letters', {id: 2});
+		expect(app.route.params).toEqual({id: 2});
+
+		let error;
+
+		try {
+			await app.go('#letters', {id: 'str'});
+		} catch (_) {
+			error = _;
+		}
+
+		expect(error.code).toBe(404);
+		expect(app.route.params).toEqual({id: 2});
 	});
 
-	QUnit.promiseTest('search/query', function (assert) {
+	test('search/query', async () => {
 		var query;
 		var app = Pilot.create({
 			model: {
@@ -220,12 +240,11 @@ define(['../src/pilot'], function (Pilot) {
 			}
 		});
 
-		return app.nav('/search/?find=foo').then(function () {
-			assert.deepEqual(query, {find: 'foo'});
-		});
+		await app.nav('/search/?find=foo');
+		expect(query).toEqual({find: 'foo'});
 	});
 
-	QUnit.promiseTest('race condition', function (assert) {
+	xtest('race condition', async () => {
 		var log = [];
 		var loader = new Pilot.Loader({
 			value: function (req) {
@@ -233,11 +252,12 @@ define(['../src/pilot'], function (Pilot) {
 			}
 		}, {
 			persist: true,
-			processing: function (req, model) {
-				log.push(model.value)
+			processing: function (req, action, model) {
+				log.push(model.value);
 				return model;
 			},
-		})
+		});
+
 		var race = Pilot.create({
 			model: loader,
 			'#index': {url: '/:time'}
@@ -253,35 +273,37 @@ define(['../src/pilot'], function (Pilot) {
 			loader.fetch();
 		}, 60);
 
-		return sleep(110).then(function () {
-			assert.deepEqual(log, ['50']);
-		});
+		await sleep(110);
+		expect(log).toEqual(['50']);
 	});
 
-	QUnit.promiseTest('force', function (assert) {
+	test('force', async () => {
+		const app = createMockApp();
+
 		var navigated = 0;
 
 		var handleRoute = function () {
 			navigated++;
 		};
 
-		return app.go('#letters', {type: 'inbox'}).then(function () {
-			app.on('route', handleRoute);
+		await app.go('#letters', {type: 'inbox'});
+		app.on('route', handleRoute);
 
-			// Сейчас не перейдёт
-			return app.go('#letters', {type: 'inbox'});
-		}).then(function () {
-			assert.equal(navigated, 0);
+		// Сейчас не перейдёт
+		await app.go('#letters', {type: 'inbox'});
 
-			// А сейчас перейдёт
-			return app.go('#letters', {type: 'inbox'}, null, {force: true});
-		}).then(function () {
-			assert.equal(navigated, 1);
-			app.off('route', handleRoute);
-		});
+		expect(navigated).toBe(0);
+
+		// А сейчас перейдёт
+		await app.go('#letters', {type: 'inbox'}, null, {force: true});
+
+		expect(navigated).toBe(1);
+		app.off('route', handleRoute);
 	});
 
-	QUnit.promiseTest('model/fail', function (assert) {
+	test('model/fail', async () => {
+		const app = createMockApp();
+
 		var log = [];
 		var rnd = Math.random();
 		app.on('beforeroute route-fail route-end', function (evt) {
@@ -293,8 +315,8 @@ define(['../src/pilot'], function (Pilot) {
 				return rnd;
 			});
 		}).then(function (x) {
-			assert.equal(x, rnd);
-			assert.deepEqual(log, [
+			expect(x).toBe(rnd);
+			expect(log).toEqual([
 				'beforeroute', 'routefail', 'routeend',
 				'beforeroute', 'routefail', 'routeend',
 			]);
