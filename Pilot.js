@@ -652,17 +652,9 @@ define('src/loader',['./match', './action-queue'], function (match, ActionQueue)
 
 		// Инкрементивный ID запросов нужен для performance
 		this._lastReqId = 0;
-		// Счётчик выполняемых запросов с высоким приоритетом
-		// Запросы с низким приоритетом будут выполняться только после того, как этот счётчик станет 0
-		this._highPriorityQueries = 0;
-		// Если есть запросы с высоким приоритетом, этот промис разрезолвится после завершения последнего запроса
-		this._highPriorityPromise = null;
-		this._highPriorityPromiseResolve = null;
-		// Приоритет последнего экшна
-		this._lastPriority = Loader.PRIORITY_LOW;
 		// Дебаг-режим, выводит в performance все экшны
 		this._debug = false;
-
+		// Очередь экшнов
 		this._actionQueue = new ActionQueue();
 
 		this.names.forEach(function (name) {
