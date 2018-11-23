@@ -477,7 +477,132 @@ define('src/match',[], function () {
 	};
 });
 
-define('src/loader',['./match'], function (match, Emitter) {
+define('src/action-queue',['Emitter'], function(Emitter) {
+
+	function ActionQueue() {
+		Emitter.apply(this);
+
+		this._queue = [];
+		this._activeIds = {};
+		this._id = 0;
+		this._lastQueueItem = void 0;
+		this._endedCount = -1;
+	}
+
+	ActionQueue.PRIORITY_HIGH = 16;
+
+	ActionQueue.prototype = {
+		constructor: ActionQueue,
+
+		push: function(request, action) {
+			// TODO: arg types check
+
+			// Проставляем по умолчанию наивысший приоритет
+			if (action.priority == null) {
+				action.priority = ActionQueue.PRIORITY_HIGH;
+			}
+
+			var queueItem = {
+				request: request,
+				action: action,
+				timestamp: Date.now(),
+				id: this._id++
+			};
+
+			// Добавляем в очередь
+			this._queue.push(queueItem);
+			// Возвращаем уникальный id
+			return queueItem.id;
+		},
+
+		remove: function(id) {
+			// Если query был в _activeIds
+			if (this._activeIds[id]) {
+				// Сбросим _lastQueueItem
+				if (this._lastQueueItem === this._activeIds[id]) {
+					this._lastQueueItem = void 0;
+				}
+
+				// Сообщим, что прекратили выполнять этот экшн
+				this.notifyEnd(id, void 0);
+				return;
+			}
+
+			var nextQueue = [];
+
+			// Формируем новую очередь без экшна с указанным id
+			for (var i = 0; i < this._queue.length; i++) {
+				if (this._queue[i].id !== id) {
+					nextQueue.push(this._queue[i]);
+				}
+			}
+
+			// Сохраним новую очередь
+			this._queue = nextQueue;
+			// Сообщим, что прекратили выполнять этот экшн
+			this.notifyEnd(id, void 0);
+		},
+
+		canPoll: function() {
+			var nextItem = this._queue[0];
+			var lastActiveItem = this._lastQueueItem;
+
+			// Не можем поллить, так как очередь пуста
+			if (!nextItem) {
+				return false;
+			}
+
+			// Можем поллить, так как ничего не запущено
+			if (!lastActiveItem) {
+				return true;
+			}
+
+			// Можем поллить, если приоритет последнего запущенного экшна равен приоритету следующего экшна в очереди
+			return lastActiveItem.action.priority === nextItem.action.priority;
+		},
+
+		poll: function() {
+			var queueItem = this._queue.shift();
+
+			this._activeIds[queueItem.id] = queueItem;
+			this._lastQueueItem = queueItem;
+
+			return queueItem;
+		},
+
+		notifyEnd: function(id, result) {
+			// Сбрасываем lastQueueItem, если закончили именно его
+			if (this._lastQueueItem === this._activeIds[id]) {
+				this._lastQueueItem = void 0;
+			}
+
+			// Удаляем из активных в любом случае
+			delete this._activeIds[id];
+			// Сообщаем Loader
+			this.emit(id + ':end', result);
+
+			// Увеличиваем счётчик завершённых экшнов
+			this._endedCount++;
+		},
+
+		awaitEnd: function(id) {
+			// Если экшн уже давно выполнился
+			if (id <= this._endedCount) {
+				return Promise.resolve();
+			}
+
+			// Ожидаем выполнения экшна
+			return new Promise(function(resolve) {
+				this.one(id + ':end', resolve);
+			}.bind(this));
+		},
+	};
+
+	return ActionQueue;
+
+});
+
+define('src/loader',['./match', './action-queue'], function (match, ActionQueue) {
 	'use strict';
 
 	var _cast = function (name, model) {
@@ -537,6 +662,8 @@ define('src/loader',['./match'], function (match, Emitter) {
 		this._lastPriority = Loader.PRIORITY_LOW;
 		// Дебаг-режим, выводит в performance все экшны
 		this._debug = false;
+
+		this._actionQueue = new ActionQueue();
 
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
@@ -721,66 +848,32 @@ define('src/loader',['./match'], function (match, Emitter) {
 				return _fetchPromises[_persistKey];
 			}
 
-			// Приоритет действия
-			var priority = action.priority == null ? Loader.PRIORITY_HIGH : action.priority;
+			// Добавляем экшн в очередь
+			var actionId = _this._actionQueue.push(_req, action);
+			// Пробуем выполнить следующий экшн из очереди
+			this._tryProcessQueue();
+			// Возвращаем промис, который выполнится, когда выполнится этот экшн
+			return _this._actionQueue.awaitEnd(actionId);
+		},
 
-			if (
-				_this._highPriorityQueries &&
-				(priority !== _this._lastPriority || priority === Loader.PRIORITY_LOW)
-			) {
-				return _this._highPriorityPromise
-					.then(function() {
-						// Попробуем сделать действие ещё раз после выполнения всех действий с более высоким приоритетом
-						return _this._executeActionAsync(req, action);
-					});
-			}
+		_tryProcessQueue: function() {
+			while (this._actionQueue.canPoll()) {
+				var queueItem = this._actionQueue.poll();
 
-			// Выставляем активный приоритет
-			_this._highPriorityQueries++;
-			_this._lastPriority = priority;
+				// Отправляем экшн выполняться
+				var actionPromise = this._loadSources(queueItem.request, queueItem.action);
 
-			if (!_this._highPriorityPromise) {
-				_this._highPriorityPromise = Promise.resolve();
-			}
-
-			_this._highPriorityPromise = _this._highPriorityPromise.then(
-				new Promise(function (resolve) {
-					_this._highPriorityPromiseResolve = resolve;
-				})
-			);
-
-			// Отправляем экшн выполняться
-			var actionPromise = this._loadSources(_req, action);
-
-			actionPromise
+				actionPromise
 				// Ошибку на этом этапе уже обработали
-				.catch(function () {})
-				.then(function () {
-					_this._handleActionEnd();
-				});
-
-			return actionPromise;
-		},
-
-		_handleActionEnd: function() {
-			var _this = this;
-			_this._highPriorityQueries--;
-
-			// Резолвим high priority promise, если закончили выполнять экшн с высоким приоритетом
-			if (!_this._highPriorityQueries) {
-				_this._highPriorityPromiseResolve();
-				_this._highPriorityPromise = null;
+					.catch(function () {
+					})
+					.then(function (queueItem, result) {
+						// Сообщаем, что экшн прекратили выполнять
+						this._actionQueue.notifyEnd(queueItem.id, result);
+						// Пробуем выполнить следующий экшн
+						this._tryProcessQueue();
+					}.bind(this, queueItem));
 			}
-		},
-
-		_executeActionAsync: function(req, action) {
-			var _this = this;
-
-			return new Promise(function (resolve) {
-				setImmediate(function () {
-					resolve(_this._executeAction(req, action));
-				});
-			});
 		},
 
 
