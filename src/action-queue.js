@@ -11,7 +11,7 @@ define(['Emitter'], function(Emitter) {
 	}
 
 	ActionQueue.PRIORITY_HIGH = 1;
-	ActionQueue.PRIORITY_HIGH = 0;
+	ActionQueue.PRIORITY_LOW = 0;
 
 	ActionQueue.prototype = {
 		constructor: ActionQueue,
