@@ -13,7 +13,12 @@ function sleep(milliseconds) {
 async function createSleepyLoggingLoader(log, {persist} = {persist: false}) {
 	const loader = new Loader({
 		// Этот "переход по маршруту" будет просто ждать нужное кол-во милилсекунд
+		// Ещё он может зависнуть, т.е. вернуть промис, который не разрезолвится никогда
 		data(request, waitFor, action) {
+			if (action.hang) {
+				return new Promise();
+			}
+
 			return sleep(action.timeout)
 				.then(() => `timeout ${action.timeout}`);
 		}
@@ -99,7 +104,7 @@ describe('Loader', () => {
 
 		await sleep(100);
 
-		expect(log).toEqual(['timeout 20', 'timeout 10']);
+		expect(log).toEqual(['timeout 10', 'timeout 20']);
 	});
 
 
@@ -228,4 +233,16 @@ describe('Loader', () => {
 
 		expect(loader.fetch(reqX)).rejects;
 	});
+
+
+	test('infinite loop', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log);
+
+		loader.dispatch({priority: Loader.PRIORITY_HIGH, hang: true});
+		await sleep(50);
+		await loader.dispatch({timeout: 40, priority: Loader.PRIORITY_HIGH});
+
+		expect(log).toEqual(['timeout 40']);
+	})
 });
