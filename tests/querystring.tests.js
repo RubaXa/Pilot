@@ -1,9 +1,11 @@
-define(['../src/querystring'], function (/** queryString */queryString) {
-	QUnit.module('queryString');
+/* global describe, beforeEach, test, expect */
 
+const queryString = require('../src/querystring');
+
+describe('queryString', () => {
 
 	// Parser
-	QUnit.test('parse', function (assert) {
+	test('parse', () => {
 		var cases = {
 			'?foo=bar': {foo: 'bar'},
 			'#foo=bar': {foo: 'bar'},
@@ -23,13 +25,13 @@ define(['../src/querystring'], function (/** queryString */queryString) {
 
 
 		Object.keys(cases).forEach(function (search) {
-			assert.deepEqual(queryString.parse(search), cases[search], search);
+			expect(queryString.parse(search)).toEqual(cases[search]);
 		});
 	});
 
 
 	// Stringify
-	QUnit.test('stringify', function (assert) {
+	test('stringify', () => {
 		var cases = {
 			'null': {'null':null},
 			'undefined': {'undefined':void 0},
@@ -47,7 +49,7 @@ define(['../src/querystring'], function (/** queryString */queryString) {
 
 
 		Object.keys(cases).forEach(function (query) {
-			assert.deepEqual(queryString.stringify(cases[query]), query, query);
+			expect(queryString.stringify(cases[query])).toEqual(query);
 		});
 	});
 });

@@ -1,20 +1,24 @@
 {
   "name": "pilotjs",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "devDependencies": {
     "amdclean": "^2.7.0",
+    "babel-jest": "^23.6.0",
+    "babel-plugin-transform-amd-to-commonjs": "^1.2.0",
+    "babel-plugin-transform-string-literal-replace": "^1.0.2",
     "grunt": "^1.0.1",
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-contrib-requirejs": "^1.0.0",
     "grunt-contrib-uglify": "^1.0.0",
     "grunt-qunit-istanbul": "^1.0.0",
     "grunt-version": "*",
+    "jest": "^23.6.0",
     "request": "^2.65.0"
   },
   "description": "Multifunction JavaScript router.",
   "main": "Pilot.js",
   "scripts": {
-    "test": "grunt test",
+    "test": "jest --coverage",
     "build": "grunt build",
     "prepublish": "npm run build"
   },
@@ -32,5 +36,23 @@
   "license": "MIT",
   "include": [
     "Pilot.js"
-  ]
+  ],
+  "jest": {
+    "testRegex": "\\.tests\\.js$",
+    "transform": {
+      "\\.js$": "babel-jest"
+    },
+    "transformIgnorePatterns": [],
+    "moduleFileExtensions": [
+      "js",
+      "json"
+    ],
+    "coverageReporters": [
+      "html"
+    ],
+    "coverageDirectory": "report",
+    "collectCoverageFrom": [
+      "src/*.js"
+    ]
+  }
 }
