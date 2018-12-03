@@ -252,7 +252,7 @@ define(['./match', './action-queue'], function (match, ActionQueue) {
 				var actionPromise = this._loadSources(queueItem.request, queueItem.action);
 
 				actionPromise
-				// Ошибку на этом этапе уже обработали
+					// Ошибку на этом этапе уже обработали
 					.catch(function () {
 					})
 					.then(function (queueItem, result) {
@@ -321,8 +321,8 @@ define(['./match', './action-queue'], function (match, ActionQueue) {
 
 	Loader.ACTION_NAVIGATE = 'NAVIGATE';
 	Loader.ACTION_NONE = 'NONE';
-	Loader.PRIORITY_LOW = 0;
-	Loader.PRIORITY_HIGH = 1;
+	Loader.PRIORITY_LOW = ActionQueue.PRIORITY_LOW;
+	Loader.PRIORITY_HIGH = ActionQueue.PRIORITY_HIGH;
 
 	// Export
 	return Loader;
