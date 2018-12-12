@@ -129,4 +129,36 @@ describe('Pilot:alias',  () => {
 		expect(app.request.alias).toEqual('compose');
 	});
 
+	test('alias cleanup', async () => {
+		const app = Pilot.create({
+			'#index': {
+				url: '/',
+				aliases: {
+					'compose': '/compose/'
+				}
+			},
+		});
+
+		await app.nav('/');
+
+		// Обычный переход, алиасов нет
+		expect(app.route.is('#index')).toBeTruthy();
+		expect(app.route.params).toEqual({});
+		expect(app.request.alias).toEqual(void 0);
+
+		await app.nav('/compose');
+
+		// Переход с алиасом без параметров
+		expect(app.route.is('#index')).toBeTruthy();
+		expect(app.route.params).toEqual({});
+		expect(app.request.alias).toEqual('compose');
+
+		await app.nav('/');
+
+		// Обычный переход, алиасов нет
+		expect(app.route.is('#index')).toBeTruthy();
+		expect(app.route.params).toEqual({});
+		expect(app.request.alias).toEqual(void 0);
+	});
+
 });
