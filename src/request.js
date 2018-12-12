@@ -30,6 +30,9 @@ define(['./url', './querystring'], function (/** URL */URL, /** queryString */qu
 		this.router = router;
 		this.referrer = referrer;
 		this.redirectHref = null;
+
+		// Алиас, который сматчился
+		this.alias = void 0;
 	};
 
 
