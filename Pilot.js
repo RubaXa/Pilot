@@ -17,7 +17,8 @@
 							});
 						})(typeof define === 'function' && define.amd ? define : function (deps, callback) {
 							window.Pilot = callback(window.Emitter);
-						}, function (define) {define('src/querystring',[], function () {
+						}, function (define) {
+define('src/querystring',[], function () {
 	'use strict';
 
 	var encodeURIComponent = window.encodeURIComponent;
@@ -964,6 +965,9 @@ define('src/request',['./url', './querystring'], function (/** URL */URL, /** qu
 		this.router = router;
 		this.referrer = referrer;
 		this.redirectHref = null;
+
+		// Алиас, который сматчился
+		this.alias = void 0;
 	};
 
 
@@ -1045,6 +1049,27 @@ define('src/route',[
 
 	var _cleanUrl = function (url) {
 		return url.replace(/\/+$/, '/');
+	};
+
+	/**
+	 * Кладёт в target правила из source, если их там не было
+	 */
+	var _mergeRules = function (source, target) {
+		if (!source) {
+			source = {};
+		}
+
+		if (!target) {
+			target = {};
+		}
+
+		Object.keys(source).forEach(function (sourceRule) {
+			if (!target[sourceRule]) {
+				target[sourceRule] = source[sourceRule];
+			}
+		});
+
+		return target;
 	};
 
 
@@ -1165,8 +1190,39 @@ define('src/route',[
 		 */
 		this.model = options.model.defaults();
 
+		// Основной URL маршрута
 		this.url.regexp = Url.toMatcher(this.url.pattern + (options.__group__ ? '/:any([a-z0-9\\/-]*)' : ''));
 		this._urlBuilder = _toUrlBuilder(this.url.pattern);
+
+		// Алиасы
+		options.aliases = options.aliases || {};
+
+		this.aliases = Object.keys(options.aliases).map(function (name) {
+			var url = options.aliases[name];
+
+			if (typeof url === 'string') {
+				url = {pattern: url};
+			}
+
+			// Какой-то неправильный URL передали
+			if (!url || typeof url !== 'object') {
+				return function () {
+					return false
+				};
+			}
+
+			// Собираем всё, что нужно для построения URL по алиасу и наоборот
+			url.regexp = Url.toMatcher(url.pattern);
+
+			url.params = _mergeRules(this.url.params, url.params);
+			url.query = _mergeRules(this.url.query, url.query);
+
+			return {
+				// Делаем функцию, которая будет смотреть совпадения этого урла с любым другим
+				matcher: this._matchWithAnyUrl.bind(this, url),
+				name: name
+			};
+		}.bind(this));
 
 		// Родительский маршрут (группа)
 		this.parentRoute = this.router[this.parentId];
@@ -1326,10 +1382,22 @@ define('src/route',[
 		 * @returns {boolean}
 		 */
 		match: function (url, req) {
-			var params = Url.match(this.url.regexp, url.pathname),
-				query = url.query,
-				_paramsRules = this.url.params,
-				_queryRules = this.url.query;
+			return this._matchWithAnyUrl(this.url, url, req);
+		},
+
+		/**
+		 * Проверка маршрута с любым URL
+		 * @param {URL} matcherUrl - url, который проверяем
+		 * @param {URL} matchingUrl - url, с которым проверяем
+		 * @param {Pilot.Request} req
+		 * @returns {boolean}
+		 * @private
+		 */
+		_matchWithAnyUrl: function (matcherUrl, matchingUrl, req) {
+			var params = Url.match(matcherUrl.regexp, matchingUrl.pathname),
+				query = matchingUrl.query,
+				_paramsRules = matcherUrl.params,
+				_queryRules = matcherUrl.query;
 
 			return (
 				params &&
@@ -1745,6 +1813,19 @@ define('src/pilot.js',[
 
 				// Находим нужный нам маршрут
 				currentRoute = routes.find(function (/** Pilot.Route */item) {
+					// Пытаемся сматчить этот маршрут по алиасу
+					var matchedAlias = item.aliases.find(function (alias) {
+						var matcher = alias.matcher;
+						return matcher && matcher(url, req);
+					});
+
+					// Получилось?
+					if (matchedAlias) {
+						req.alias = matchedAlias.name;
+						return true;
+					}
+
+					// Матчим по основной регулярке
 					return !item.__group__ && item.match(url, req);
 				});
 
