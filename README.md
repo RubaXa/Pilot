@@ -139,6 +139,12 @@ Current route.
  - **url**:`string`
  - **details**:`object` - route navigation details (options)
 
+
+#### reload():`Promise`
+
+Emits `beforereload` and `reload` events. if a handler to `beforereload` returns `false`, does not
+perform actual reload and returns a resolved promise instead.
+
 ---
 
 ### `Pilot.Route` methods and properties
