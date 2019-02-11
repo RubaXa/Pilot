@@ -369,11 +369,13 @@ define([
 		 */
 		reload: function () {
 			var _this = this;
-			var evt = _this.trigger('beforereload');
+
+			var evt = new Emitter.Event('beforereload');
+			_this.trigger(evt);
 
 			// Отменили перезагружку
 			if (evt.result === false) {
-				return Promise.reject();
+				return Promise.resolve();
 			}
 
 			_this.trigger('reload');
