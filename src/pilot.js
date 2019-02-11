@@ -362,6 +362,24 @@ define([
 					});
 				}
 			}
+		},
+
+		/**
+		 * Метод вызывает событие перезагрузки приложения.
+		 */
+		reload: function () {
+			var _this = this;
+			var evt = _this.trigger('beforereload');
+
+			// Отменили перезагружку
+			if (evt.result === false) {
+				return Promise.reject();
+			}
+
+			_this.trigger('reload');
+
+			// TODO: События reload-fail и reload-end
+			return _this.nav(_this.activeUrl.href, {force: true, replaceState: true})
 		}
 	};
 

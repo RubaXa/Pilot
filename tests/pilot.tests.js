@@ -323,6 +323,20 @@ describe('Pilot', () => {
 		});
 	});
 
+	test('view reload event', () => {
+		const app = createMockApp();
+		const log = [];
+
+		app.on('beforereload reload', (evt) => {
+			log.push(evt.type);
+		});
+
+		app.activeUrl = new Pilot.URL(app['#letters'].getUrl({type: 'inbox'}), location);
+		app.reload();
+
+		expect(log).toEqual(['beforereload', 'reload']);
+	});
+
 	function sleep(time) {
 		return new Promise(function (resolve) {
 			setTimeout(function () {
