@@ -337,6 +337,21 @@ describe('Pilot', () => {
 		expect(log).toEqual(['beforereload', 'reload']);
 	});
 
+	test('view reload event cancels', () => {
+		const app = createMockApp();
+		const log = [];
+
+		app.on('beforereload reload', (evt) => {
+			log.push(evt.type);
+			return false;
+		});
+
+		app.activeUrl = new Pilot.URL(app['#letters'].getUrl({type: 'inbox'}), location);
+		app.reload();
+
+		expect(log).toEqual(['beforereload']);
+	});
+
 	function sleep(time) {
 		return new Promise(function (resolve) {
 			setTimeout(function () {
