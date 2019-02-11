@@ -1936,6 +1936,26 @@ define('src/pilot.js',[
 					});
 				}
 			}
+		},
+
+		/**
+		 * Метод вызывает событие перезагрузки приложения.
+		 */
+		reload: function () {
+			var _this = this;
+
+			var evt = new Emitter.Event('beforereload');
+			_this.trigger(evt);
+
+			// Отменили перезагружку
+			if (evt.result === false) {
+				return Promise.resolve();
+			}
+
+			_this.trigger('reload');
+
+			// TODO: События reload-fail и reload-end
+			return _this.nav(_this.activeUrl.href, {force: true, replaceState: true})
 		}
 	};
 
