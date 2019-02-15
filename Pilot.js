@@ -1594,9 +1594,14 @@ define('src/pilot.js',[
 ) {
 	'use strict';
 
-	var aboutBlankUrl = new URL('about:blank')
+	var aboutBlankUrl = new URL('about:blank');
 	var resolvedPromise = Promise.resolve();
 
+	var mouseButtons = {
+		main: 0, // Левая кнопка мыши
+		auxiliary: 1, // Средняя кнопка мыши
+		secondary: 2 // Правая кнопка мыши
+	};
 
 	function _normalizeRouteUrl(url, relative) {
 		relative = relative || {};
@@ -1895,7 +1900,11 @@ define('src/pilot.js',[
 						url &&
 						hostnameRegExp.test(url) &&
 						!evt.defaultPrevented &&
-						!(evt.metaKey || evt.ctrlKey || evt.button === 2) &&
+						!(
+							evt.metaKey || evt.ctrlKey ||
+							evt.button === mouseButtons.secondary ||
+							evt.button === mouseButtons.auxiliary
+						) &&
 						(!filter || filter(url))
 					) {
 						evt.preventDefault();

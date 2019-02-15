@@ -310,8 +310,8 @@ describe('Pilot', () => {
 			log.push(evt.type)
 		});
 
-		return app.go('#fail', {id: 1}).catch(function () {
-			return app.go('#fail', {id: 1}).catch(function () {
+		await app.go('#fail', {id: 1}).then().catch(function () {
+			return app.go('#fail', {id: 1}).then(console.log).catch(function () {
 				return rnd;
 			});
 		}).then(function (x) {
@@ -350,6 +350,50 @@ describe('Pilot', () => {
 		app.reload();
 
 		expect(log).toEqual(['beforereload']);
+	});
+
+	test('listenFrom', async () => {
+		try {
+			var navigated = 0;
+
+			var handleRoute = function () {
+				navigated++;
+			};
+
+			const app = createMockApp();
+			// const log = [];
+			//
+			// app.on('route', handleRoute);
+			//
+			// const link = document.createElement('a');
+			// link.href = '/messages/inbox/';
+			//
+			// link.click();
+			//
+			// expect(navigated).toBe(0);
+
+			// app.on('beforereload reload', (evt) => {
+			// 	log.push(evt.type);
+			// 	return false;
+			// });
+
+			// await app.nav('/search?find=foo');
+			// expect(navigated).toBe(0);
+
+			// console.error(app.activeUrl);
+
+			// link.click();
+			await sleep(1000);
+
+			// console.error(app.activeUrl);
+
+			// app.reload();
+			// expect(navigated).toBe(1);
+		} catch (e) {
+			console.warn('hello')
+		}
+
+		// app.off('route', handleRoute);
 	});
 
 	function sleep(time) {
