@@ -378,7 +378,7 @@ describe('Pilot', () => {
 		app.off('route', handleRoute);
 	});
 
-	test.skip('listenFrom midlle/right click', async () => { // Проходит сам по себе, но ловит асинхронную ошибку от model/fail, пока скипаем
+	test.skip('listenFrom middle/right click', async () => { // Проходит сам по себе, но ловит асинхронную ошибку от model/fail, пока скипаем
 		let navigated = 0;
 		const handleRoute = function () {
 			navigated++;
