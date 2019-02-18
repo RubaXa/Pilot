@@ -571,7 +571,7 @@ define('src/action-queue',['Emitter'], function(Emitter) {
 			return queueItem;
 		},
 
-		notifyEnd: function(id, result) {
+		notifyEnd: function(id, result, error, throws) {
 			// Сбрасываем lastQueueItem, если закончили именно его
 			if (this._lastQueueItem === this._activeIds[id]) {
 				this._lastQueueItem = void 0;
@@ -579,8 +579,13 @@ define('src/action-queue',['Emitter'], function(Emitter) {
 
 			// Удаляем из активных в любом случае
 			delete this._activeIds[id];
+
 			// Сообщаем Loader
-			this.emit(id + ':end', result);
+			if (throws) {
+				this.emit(id + ':error', error);
+			} else {
+				this.emit(id + ':end', result);
+			}
 
 			// Увеличиваем счётчик завершённых экшнов
 			this._endedCount++;
@@ -593,8 +598,9 @@ define('src/action-queue',['Emitter'], function(Emitter) {
 			}
 
 			// Ожидаем выполнения экшна
-			return new Promise(function(resolve) {
+			return new Promise(function(resolve, reject) {
 				this.one(id + ':end', resolve);
+				this.one(id + ':error', reject);
 			}.bind(this));
 		},
 	};
@@ -857,15 +863,20 @@ define('src/loader',['./match', './action-queue'], function (match, ActionQueue)
 				var actionPromise = this._loadSources(queueItem.request, queueItem.action);
 
 				actionPromise
-					// Ошибку на этом этапе уже обработали
-					.catch(function () {
-					})
 					.then(function (queueItem, result) {
 						// Сообщаем, что экшн прекратили выполнять
 						this._actionQueue.notifyEnd(queueItem.id, result);
 						// Пробуем выполнить следующий экшн
 						this._tryProcessQueue();
-					}.bind(this, queueItem));
+					}.bind(this, queueItem))
+					.catch(function (queueItem, error) {
+						// Сообщаем, что экшн прекратили выполнять
+						this._actionQueue.notifyEnd(queueItem.id, null, error, true);
+						// Пробуем выполнить следующий экшн
+						this._tryProcessQueue();
+
+						throw error;
+					}.bind(this, queueItem))
 			}
 		},
 
