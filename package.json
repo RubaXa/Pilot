@@ -2,6 +2,7 @@
   "name": "pilotjs",
   "version": "2.10.0",
   "devDependencies": {
+    "@types/jest": "23.3.13",
     "amdclean": "^2.7.0",
     "babel-jest": "^23.6.0",
     "babel-plugin-transform-amd-to-commonjs": "^1.2.0",

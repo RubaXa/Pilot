@@ -19,9 +19,11 @@ define([
 ) {
 	'use strict';
 
-	var aboutBlankUrl = new URL('about:blank')
+	var aboutBlankUrl = new URL('about:blank');
 	var resolvedPromise = Promise.resolve();
 
+	var MOUSE_BUTTON_AUXILIARY = 1; // Средняя кнопка мыши
+	var MOUSE_BUTTON_SECONDARY = 2; // Правая кнопка мыши
 
 	function _normalizeRouteUrl(url, relative) {
 		relative = relative || {};
@@ -320,7 +322,12 @@ define([
 						url &&
 						hostnameRegExp.test(url) &&
 						!evt.defaultPrevented &&
-						!(evt.metaKey || evt.ctrlKey || evt.button === 2) &&
+						!(
+							evt.metaKey ||
+							evt.ctrlKey ||
+							evt.button === MOUSE_BUTTON_SECONDARY ||
+							evt.button === MOUSE_BUTTON_AUXILIARY
+						) &&
 						(!filter || filter(url))
 					) {
 						evt.preventDefault();
