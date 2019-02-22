@@ -92,7 +92,7 @@ define(['Emitter'], function(Emitter) {
 			return queueItem;
 		},
 
-		notifyEnd: function(id, result) {
+		notifyEnd: function(id, result, error, throws) {
 			// Сбрасываем lastQueueItem, если закончили именно его
 			if (this._lastQueueItem === this._activeIds[id]) {
 				this._lastQueueItem = void 0;
@@ -100,8 +100,13 @@ define(['Emitter'], function(Emitter) {
 
 			// Удаляем из активных в любом случае
 			delete this._activeIds[id];
+
 			// Сообщаем Loader
-			this.emit(id + ':end', result);
+			if (throws) {
+				this.emit(id + ':error', error);
+			} else {
+				this.emit(id + ':end', result);
+			}
 
 			// Увеличиваем счётчик завершённых экшнов
 			this._endedCount++;
@@ -114,8 +119,9 @@ define(['Emitter'], function(Emitter) {
 			}
 
 			// Ожидаем выполнения экшна
-			return new Promise(function(resolve) {
+			return new Promise(function(resolve, reject) {
 				this.one(id + ':end', resolve);
+				this.one(id + ':error', reject);
 			}.bind(this));
 		},
 	};

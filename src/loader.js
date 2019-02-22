@@ -252,15 +252,20 @@ define(['./match', './action-queue'], function (match, ActionQueue) {
 				var actionPromise = this._loadSources(queueItem.request, queueItem.action);
 
 				actionPromise
-					// Ошибку на этом этапе уже обработали
-					.catch(function () {
-					})
 					.then(function (queueItem, result) {
 						// Сообщаем, что экшн прекратили выполнять
 						this._actionQueue.notifyEnd(queueItem.id, result);
 						// Пробуем выполнить следующий экшн
 						this._tryProcessQueue();
-					}.bind(this, queueItem));
+					}.bind(this, queueItem))
+					.catch(function (queueItem, error) {
+						// Сообщаем, что экшн прекратили выполнять
+						this._actionQueue.notifyEnd(queueItem.id, null, error, true);
+						// Пробуем выполнить следующий экшн
+						this._tryProcessQueue();
+
+						throw error;
+					}.bind(this, queueItem))
 			}
 		},
 
