@@ -310,8 +310,8 @@ describe('Pilot', () => {
 			log.push(evt.type)
 		});
 
-		return app.go('#fail', {id: 1}).catch(function () {
-			return app.go('#fail', {id: 1}).catch(function () {
+		return app.go('#fail', {id: 1}).then().catch(function () {
+			return app.go('#fail', {id: 1}).then(console.log).catch(function () {
 				return rnd;
 			});
 		}).then(function (x) {
@@ -321,6 +321,104 @@ describe('Pilot', () => {
 				'beforeroute', 'routefail', 'routeend',
 			]);
 		});
+	});
+
+	test('view reload event', () => {
+		const app = createMockApp();
+		const log = [];
+
+		app.on('beforereload reload', (evt) => {
+			log.push(evt.type);
+		});
+
+		app.activeUrl = new Pilot.URL(app['#letters'].getUrl({type: 'inbox'}), location);
+		app.reload();
+
+		expect(log).toEqual(['beforereload', 'reload']);
+	});
+
+	test('view reload event cancels', () => {
+		const app = createMockApp();
+		const log = [];
+
+		app.on('beforereload reload', (evt) => {
+			log.push(evt.type);
+			return false;
+		});
+
+		app.activeUrl = new Pilot.URL(app['#letters'].getUrl({type: 'inbox'}), location);
+		app.reload();
+
+		expect(log).toEqual(['beforereload']);
+	});
+
+	test.skip('listenFrom', async () => { // Проходит сам по себе, но ловит асинхронную ошибку от model/fail, пока скипаем
+		let navigated = 0;
+		const handleRoute = function () {
+			navigated++;
+		};
+
+		const app = createMockApp();
+		app.on('route', handleRoute);
+
+		const link = document.createElement('a');
+		link.href = '/messages/inbox/';
+
+		link.click();
+		expect(navigated).toBe(0);
+
+		app.listenFrom(link, {});
+
+		link.click();
+		await sleep(100);
+
+		expect(app.activeUrl.pathname).toBe('/messages/inbox/');
+		expect(navigated).toBe(1);
+
+		app.off('route', handleRoute);
+	});
+
+	test.skip('listenFrom middle/right click', async () => { // Проходит сам по себе, но ловит асинхронную ошибку от model/fail, пока скипаем
+		let navigated = 0;
+		const handleRoute = function () {
+			navigated++;
+		};
+
+		const leftClick = new MouseEvent('click', { button: 0, which: 0 });
+		const middleClick = new MouseEvent('click', { button: 1, which: 1 });
+		const rightClick = new MouseEvent('click', { button: 2, which: 2 });
+
+		const app = createMockApp();
+		app.on('route', handleRoute);
+
+		const link = document.createElement('a');
+		link.href = '/messages/inbox/';
+
+		link.dispatchEvent(leftClick);
+		link.dispatchEvent(middleClick);
+		link.dispatchEvent(rightClick);
+		expect(navigated).toBe(0);
+
+		app.listenFrom(link, {});
+
+		link.dispatchEvent(leftClick);
+		await sleep(100);
+
+		expect(app.activeUrl.pathname).toBe('/messages/inbox/');
+		expect(navigated).toBe(1);
+
+		await app.nav('/');
+		expect(app.activeUrl.pathname).toBe('/');
+		expect(navigated).toBe(2);
+
+		link.dispatchEvent(middleClick);
+		link.dispatchEvent(rightClick);
+		await sleep(100);
+
+		expect(app.activeUrl.pathname).toBe('/');
+		expect(navigated).toBe(2);
+
+		app.off('route', handleRoute);
 	});
 
 	function sleep(time) {

@@ -1,4 +1,4 @@
-define(['./match'], function (match, Emitter) {
+define(['./match', './action-queue'], function (match, ActionQueue) {
 	'use strict';
 
 	var _cast = function (name, model) {
@@ -48,16 +48,10 @@ define(['./match'], function (match, Emitter) {
 
 		// Инкрементивный ID запросов нужен для performance
 		this._lastReqId = 0;
-		// Счётчик выполняемых запросов с высоким приоритетом
-		// Запросы с низким приоритетом будут выполняться только после того, как этот счётчик станет 0
-		this._highPriorityQueries = 0;
-		// Если есть запросы с высоким приоритетом, этот промис разрезолвится после завершения последнего запроса
-		this._highPriorityPromise = null;
-		this._highPriorityPromiseResolve = null;
-		// Приоритет последнего экшна
-		this._lastPriority = Loader.PRIORITY_LOW;
 		// Дебаг-режим, выводит в performance все экшны
 		this._debug = false;
+		// Очередь экшнов
+		this._actionQueue = new ActionQueue();
 
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
@@ -242,66 +236,37 @@ define(['./match'], function (match, Emitter) {
 				return _fetchPromises[_persistKey];
 			}
 
-			// Приоритет действия
-			var priority = action.priority == null ? Loader.PRIORITY_HIGH : action.priority;
-
-			if (
-				_this._highPriorityQueries &&
-				(priority !== _this._lastPriority || priority === Loader.PRIORITY_LOW)
-			) {
-				return _this._highPriorityPromise
-					.then(function() {
-						// Попробуем сделать действие ещё раз после выполнения всех действий с более высоким приоритетом
-						return _this._executeActionAsync(req, action);
-					});
-			}
-
-			// Выставляем активный приоритет
-			_this._highPriorityQueries++;
-			_this._lastPriority = priority;
-
-			if (!_this._highPriorityPromise) {
-				_this._highPriorityPromise = Promise.resolve();
-			}
-
-			_this._highPriorityPromise = _this._highPriorityPromise.then(
-				new Promise(function (resolve) {
-					_this._highPriorityPromiseResolve = resolve;
-				})
-			);
-
-			// Отправляем экшн выполняться
-			var actionPromise = this._loadSources(_req, action);
-
-			actionPromise
-				// Ошибку на этом этапе уже обработали
-				.catch(function () {})
-				.then(function () {
-					_this._handleActionEnd();
-				});
-
-			return actionPromise;
+			// Добавляем экшн в очередь
+			var actionId = _this._actionQueue.push(_req, action);
+			// Пробуем выполнить следующий экшн из очереди
+			this._tryProcessQueue();
+			// Возвращаем промис, который выполнится, когда выполнится этот экшн
+			return _this._actionQueue.awaitEnd(actionId);
 		},
 
-		_handleActionEnd: function() {
-			var _this = this;
-			_this._highPriorityQueries--;
+		_tryProcessQueue: function() {
+			while (this._actionQueue.canPoll()) {
+				var queueItem = this._actionQueue.poll();
 
-			// Резолвим high priority promise, если закончили выполнять экшн с высоким приоритетом
-			if (!_this._highPriorityQueries) {
-				_this._highPriorityPromiseResolve();
-				_this._highPriorityPromise = null;
+				// Отправляем экшн выполняться
+				var actionPromise = this._loadSources(queueItem.request, queueItem.action);
+
+				actionPromise
+					.then(function (queueItem, result) {
+						// Сообщаем, что экшн прекратили выполнять
+						this._actionQueue.notifyEnd(queueItem.id, result);
+						// Пробуем выполнить следующий экшн
+						this._tryProcessQueue();
+					}.bind(this, queueItem))
+					.catch(function (queueItem, error) {
+						// Сообщаем, что экшн прекратили выполнять
+						this._actionQueue.notifyEnd(queueItem.id, null, error, true);
+						// Пробуем выполнить следующий экшн
+						this._tryProcessQueue();
+
+						throw error;
+					}.bind(this, queueItem))
 			}
-		},
-
-		_executeActionAsync: function(req, action) {
-			var _this = this;
-
-			return new Promise(function (resolve) {
-				setImmediate(function () {
-					resolve(_this._executeAction(req, action));
-				});
-			});
 		},
 
 
@@ -361,8 +326,8 @@ define(['./match'], function (match, Emitter) {
 
 	Loader.ACTION_NAVIGATE = 'NAVIGATE';
 	Loader.ACTION_NONE = 'NONE';
-	Loader.PRIORITY_LOW = 0;
-	Loader.PRIORITY_HIGH = 1;
+	Loader.PRIORITY_LOW = ActionQueue.PRIORITY_LOW;
+	Loader.PRIORITY_HIGH = ActionQueue.PRIORITY_HIGH;
 
 	// Export
 	return Loader;
