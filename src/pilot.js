@@ -173,6 +173,19 @@ define([
 
 				// Находим нужный нам маршрут
 				currentRoute = routes.find(function (/** Pilot.Route */item) {
+					// Пытаемся сматчить этот маршрут по алиасу
+					var matchedAlias = item.aliases.find(function (alias) {
+						var matcher = alias.matcher;
+						return matcher && matcher(url, req);
+					});
+
+					// Получилось?
+					if (matchedAlias) {
+						req.alias = matchedAlias.name;
+						return true;
+					}
+
+					// Матчим по основной регулярке
 					return !item.__group__ && item.match(url, req);
 				});
 
