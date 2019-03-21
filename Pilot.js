@@ -2046,14 +2046,19 @@ define('src/pilot.js',[
 			var evt = new Emitter.Event('beforereload');
 			_this.trigger(evt);
 
-			// Отменили перезагружку
-			if (evt.result === false) {
+			// Отменили ли перезагрузку?
+			const reloadCancelled = evt.result === false;
+
+			if (!reloadCancelled) {
+				_this.trigger('reload');
+			}
+
+			_this.trigger('reloadend', null, {cancelled: reloadCancelled});
+
+			if (reloadCancelled) {
 				return Promise.resolve();
 			}
 
-			_this.trigger('reload');
-
-			// TODO: События reload-fail и reload-end
 			return _this.nav(_this.activeUrl.href, {force: true, replaceState: true})
 		}
 	};

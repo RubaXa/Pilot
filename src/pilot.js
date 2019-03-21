@@ -400,8 +400,7 @@ define([
 				_this.trigger('reload');
 			}
 
-			var evt = new Emitter.Event({type: 'reloadend', details: {cancelled: reloadCancelled}});
-			_this.trigger(evt);
+			_this.trigger('reloadend', null, {cancelled: reloadCancelled});
 
 			if (reloadCancelled) {
 				return Promise.resolve();
