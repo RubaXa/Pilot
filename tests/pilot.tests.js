@@ -327,29 +327,43 @@ describe('Pilot', () => {
 		const app = createMockApp();
 		const log = [];
 
-		app.on('beforereload reload', (evt) => {
-			log.push(evt.type);
+		app.on('beforereload reload reloadend', ({type, details}) => {
+			const evt = {type};
+			if (details) {
+				evt.details = details;
+			}
+
+			log.push(evt);
 		});
 
 		app.activeUrl = new Pilot.URL(app['#letters'].getUrl({type: 'inbox'}), location);
 		app.reload();
 
-		expect(log).toEqual(['beforereload', 'reload']);
+		expect(log).toEqual([
+			{type: 'beforereload'},
+			{type: 'reload'},
+			{type: "reloadend", details: {cancelled: false}}
+		]);
 	});
 
 	test('view reload event cancels', () => {
 		const app = createMockApp();
 		const log = [];
 
-		app.on('beforereload reload', (evt) => {
-			log.push(evt.type);
+		app.on('beforereload reload reloadend', ({type, details}) => {
+			const evt = {type};
+			if (details) {
+				evt.details = details;
+			}
+
+			log.push(evt);
 			return false;
 		});
 
 		app.activeUrl = new Pilot.URL(app['#letters'].getUrl({type: 'inbox'}), location);
 		app.reload();
 
-		expect(log).toEqual(['beforereload']);
+		expect(log).toEqual([{type: 'beforereload'}, {type: 'reloadend', details: {cancelled: true}}]);
 	});
 
 	test.skip('listenFrom', async () => { // Проходит сам по себе, но ловит асинхронную ошибку от model/fail, пока скипаем
