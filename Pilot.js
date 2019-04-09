@@ -479,7 +479,7 @@ define('src/match',[], function () {
 
 define('src/action-queue',['Emitter'], function(Emitter) {
 
-	function ActionQueue() {
+	function ActionQueue(options) {
 		Emitter.apply(this);
 
 		this._queue = [];
@@ -487,6 +487,11 @@ define('src/action-queue',['Emitter'], function(Emitter) {
 		this._id = 0;
 		this._lastQueueItem = void 0;
 		this._endedCount = -1;
+
+		this._options = {
+			// Включает режим выполнения всех без исключения экшнов без блокировок
+			forceParallel: options.forceParallel
+		}
 	}
 
 	ActionQueue.PRIORITY_HIGH = 1;
@@ -499,7 +504,7 @@ define('src/action-queue',['Emitter'], function(Emitter) {
 			// TODO: arg types check
 
 			// Проставляем по умолчанию наивысший приоритет
-			if (action.priority == null) {
+			if (action.priority == null || this._options.forceParallel) {
 				action.priority = ActionQueue.PRIORITY_HIGH;
 			}
 
@@ -662,7 +667,7 @@ define('src/loader',['./match', './action-queue'], function (match, ActionQueue)
 		// Дебаг-режим, выводит в performance все экшны
 		this._debug = false;
 		// Очередь экшнов
-		this._actionQueue = new ActionQueue();
+		this._actionQueue = new ActionQueue(this._options);
 
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
