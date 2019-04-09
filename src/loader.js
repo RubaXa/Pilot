@@ -51,7 +51,7 @@ define(['./match', './action-queue'], function (match, ActionQueue) {
 		// Дебаг-режим, выводит в performance все экшны
 		this._debug = false;
 		// Очередь экшнов
-		this._actionQueue = new ActionQueue();
+		this._actionQueue = new ActionQueue(this._options);
 
 		this.names.forEach(function (name) {
 			this._index[name] = _cast(name, models[name]);
