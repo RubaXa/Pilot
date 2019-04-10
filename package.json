@@ -20,7 +20,7 @@
   "description": "Multifunction JavaScript router.",
   "main": "Pilot.js",
   "scripts": {
-    "test": "jest --coverage",
+    "test": "jest --coverage && npm run lint",
     "lint": "eslint src",
     "build": "grunt build",
     "prepublish": "npm run build"
