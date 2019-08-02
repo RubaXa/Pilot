@@ -2052,7 +2052,7 @@ define('src/pilot.js',[
 			_this.trigger(evt);
 
 			// Отменили ли перезагрузку?
-			const reloadCancelled = evt.result === false;
+			var reloadCancelled = evt.result === false;
 
 			if (!reloadCancelled) {
 				_this.trigger('reload');
