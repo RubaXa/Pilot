@@ -17,8 +17,7 @@
 							});
 						})(typeof define === 'function' && define.amd ? define : function (deps, callback) {
 							window.Pilot = callback(window.Emitter);
-						}, function (define) {
-define('src/querystring',[], function () {
+						}, function (define) {define('src/querystring',[], function () {
 	'use strict';
 
 	var encodeURIComponent = window.encodeURIComponent;
