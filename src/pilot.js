@@ -314,6 +314,12 @@ define([
 
 			// Слушаем `back`
 			window.addEventListener('popstate', function () {
+				var url = location.href;
+				var isFilterPassed = !filter || filter(url);
+				if (!isFilterPassed) {
+					return;
+				}
+
 				if (logger) {
 					logger.call('router.nav.popstate', {href: location.href}, popStateNav);
 				} else {
