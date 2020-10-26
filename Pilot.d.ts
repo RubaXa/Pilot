@@ -24,7 +24,7 @@ declare class Emitter {
 	static readonly Event: typeof Event;
 	static readonly version: string;
 
-	static apply(target: Object): (typeof target) | Emitter;
+	static apply(target: Object): (typeof target) & Emitter;
 	static getListeners(target: Object, name: string): EventListener[];
 }
 
