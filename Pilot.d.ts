@@ -3,7 +3,11 @@
 
 type EventListener = (...args: any[]) => any;
 
-declare class Event {
+declare class Event<T = any, D = undefined, R = any> {
+	target: T;
+	details: D;
+	result?: R;
+
 	constructor(type: string | Object | Event);
 
 	isDefaultPrevented(): boolean;
@@ -153,10 +157,12 @@ export interface RouteOptions {
 	aliases?: Record<string, RouteUrlObject | undefined>;
 }
 
+export type Model = Record<string, Object | undefined>;
+
 declare class Route extends Emitter {
 	regions: string[];
 	router: Pilot;
-	model: Record<string, Object | undefined>;
+	model: Model;
 	parentId?: string;
 	parentRoute?: Route;
 
@@ -171,6 +177,15 @@ declare class Route extends Emitter {
 	fetch(req: Request): Promise<Object>;
 	getUrl(params: Record<string, string | undefined>, query: Query | 'inherit'): string;
 	is(id: string): boolean;
+
+	on(event: 'before-init', fn: (event: Event<Route>) => any): this;
+	on(event: 'init', fn: (event: Event<Route>) => any): this;
+	on(event: 'model', fn: (event: Event<Route>, model: Model, req: Request) => any): this;
+	on(event: 'route-start', fn: (event: Event<Route>, req: Request) => any): this;
+	on(event: 'route-change', fn: (event: Event<Route>, req: Request) => any): this;
+	on(event: 'route', fn: (event: Event<Route>, req: Request) => any): this;
+	on(event: 'route-end', fn: (event: Event<Route>, req: Request) => any): this;
+	on(events: string, fn: EventListener): this;
 
 	static readonly Region: typeof Region;
 }
@@ -277,6 +292,16 @@ export default class Pilot extends Emitter {
 	nav(href: string | Url | Request, details?: PilotNavDetails): Promise<any>;
 	listenFrom(target: HTMLElement, options: PilotListenOptions);
 	reload();
+
+	on(event: 'before-route', fn: (event: Event<Pilot, PilotNavDetails>, req: Request) => any): this;
+	on(event: 'error', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, error: unknown) => any): this;
+	on(event: 'route-fail', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, currentRoute: Route, error: unknown) => any): this;
+	on(event: 'route', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, currentRoute: Route) => any): this;
+	on(event: 'route-end', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, currentRoute: Route) => any): this;
+	on(event: 'beforereload', fn: (event: Event<Pilot>) => any): this;
+	on(event: 'reload', fn: (event: Event<Pilot>) => any): this;
+	on(event: 'reloadend', fn: (event: Event<Pilot, {cancelled: boolean}>) => any): this;
+	on(events: string, fn: EventListener): this;
 
 	static create(map: PilotRouteMap): Pilot;
 
