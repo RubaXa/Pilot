@@ -24,7 +24,7 @@ declare class Emitter {
 	static readonly Event: typeof Event;
 	static readonly version: string;
 
-	static apply(target: Object): (typeof target) & Emitter;
+	static apply<T extends object>(target: T): T & Emitter;
 	static getListeners(target: Object, name: string): EventListener[];
 }
 
@@ -42,7 +42,7 @@ export interface Action {
 declare class ActionQueue extends Emitter {
 	constructor();
 
-	push(request, action: Action): ActionId;
+	push(request: Request, action: Action): ActionId;
 
 	static readonly PRIORITY_HIGH: ActionQueuePriority;
 	static readonly PRIORITY_LOW: ActionQueuePriority;
@@ -68,15 +68,15 @@ export interface LoaderModelObject {
 export type LoaderModel = LoaderModelObject | LoaderModelFetcher;
 
 declare class Loader {
-	readonly models;
+	readonly models: Record<string, LoaderModel | undefined>;
 	readonly names: string[];
 
-	constructor(models: Record<string, LoaderModel> | Loader, options: LoaderOptions);
+	constructor(models: Record<string, LoaderModel | undefined> | Loader, options: LoaderOptions);
 
-	defaults(): Record<string, Object>;
+	defaults(): Record<string, Object | undefined>;
 	fetch(): Promise<any>;
 	dispatch(): Promise<any>;
-	extend(models: Record<string, LoaderModel>): Loader;
+	extend(models: Record<string, LoaderModel | undefined>): Loader;
 	getLastReq(): Request | undefined;
 	extract(model: LoaderModel): Object;
 	bind(route: Route, model: LoaderModel);
@@ -96,7 +96,7 @@ export type Match = MatchArray | MatchFn;
 
 // ==== ./src/querystring.js ====
 
-export type Query = Record<string, string | string[]>;
+export type Query = Record<string, string | string[] | undefined>;
 
 interface QueryString {
 	parse(search: string): Query;
@@ -115,7 +115,7 @@ declare class Request {
 	pathname: string;
 	search: string;
 	query: Query;
-	params: Record<string, string>;
+	params: Record<string, string | undefined>;
 	hash: string;
 	route: Route;
 	router: Pilot;
@@ -142,7 +142,7 @@ export type UrlBuilder = (params: Record<string, any>, query: Query) => string;
 
 export interface RouteUrlObject {
 	pattern: string;
-	params?: Record<string, RouteUrlParamsConfig>;
+	params?: Record<string, RouteUrlParamsConfig | undefined>;
 	toUrl?: (params: Record<string, any>, query: Query, builder: UrlBuilder) => string;
 }
 
@@ -150,13 +150,13 @@ export type RouteUrl = string | RouteUrlObject;
 
 export interface RouteOptions {
 	model?: Loader;
-	aliases?: Record<string, RouteUrlObject>;
+	aliases?: Record<string, RouteUrlObject | undefined>;
 }
 
 declare class Route extends Emitter {
 	regions: string[];
 	router: Pilot;
-	model: Record<string, Object>;
+	model: Record<string, Object | undefined>;
 	parentId?: string;
 	parentRoute?: Route;
 
@@ -166,10 +166,10 @@ declare class Route extends Emitter {
 	protected _initOptions(options: RouteOptions);
 	protected _initMixins();
 
-	handling(url: Url, req: Request, currentRoute: Route, model: Record<string, Object>);
+	handling(url: Url, req: Request, currentRoute: Route, model: Record<string, Object | undefined>);
 	match(URL: Url, req: Request): boolean;
 	fetch(req: Request): Promise<Object>;
-	getUrl(params: Record<string, string>, query: Query | 'inherit'): string;
+	getUrl(params: Record<string, string | undefined>, query: Query | 'inherit'): string;
 	is(id: string): boolean;
 
 	static readonly Region: typeof Region;
@@ -211,7 +211,7 @@ declare class Url {
 	segment2: string;
 	search: string;
 	query: Query;
-	params: Record<string, string>;
+	params: Record<string, string | undefined>;
 	hash: string;
 
 	constructor(url: string, base: string | Url | Location);
@@ -226,7 +226,7 @@ declare class Url {
 	static readonly parseQueryString: QueryString["parse"];
 	static readonly stringifyQueryString: QueryString["stringify"];
 	static toMatcher(pattern: string | RegExp): RegExp;
-	static match(pattern: string | RegExp, url: string | Url): Record<string, string>;
+	static match(pattern: string | RegExp, url: string | Url): Record<string, string | undefined>;
 }
 
 // ==== ./src/pilot.js ====
@@ -242,7 +242,7 @@ export interface PilotRouteOptions {
 	access?: AccessFunction;
 }
 
-export type PilotRouteMap = PilotRouteOptions | Record<string, PilotRouteOption>;
+export type PilotRouteMap = PilotRouteOptions | Record<string, PilotRouteOption | undefined>;
 
 export interface PilotNavDetails {
 	initiator?: string;
@@ -272,8 +272,8 @@ export default class Pilot extends Emitter {
 
 	constructor(map: PilotRouteMap);
 
-	getUrl(id: string, params?: Record<string, string>, query?: Query | 'inherit'): string;
-	go(id: string, params?: Record<string, string>, query?: Query | 'inherit', details?: Object): Promise<any>;
+	getUrl(id: string, params?: Record<string, string | undefined>, query?: Query | 'inherit'): string;
+	go(id: string, params?: Record<string, string | undefined>, query?: Query | 'inherit', details?: Object): Promise<any>;
 	nav(href: string | Url | Request, details?: PilotNavDetails): Promise<any>;
 	listenFrom(target: HTMLElement, options: PilotListenOptions);
 	reload();
