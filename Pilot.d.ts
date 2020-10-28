@@ -187,6 +187,15 @@ declare class Route extends Emitter {
 	on(event: 'route-end', fn: (event: Event<Route>, req: Request) => any): this;
 	on(events: string, fn: EventListener): this;
 
+	one(event: 'before-init', fn: (event: Event<Route>) => any): this;
+	one(event: 'init', fn: (event: Event<Route>) => any): this;
+	one(event: 'model', fn: (event: Event<Route>, model: Model, req: Request) => any): this;
+	one(event: 'route-start', fn: (event: Event<Route>, req: Request) => any): this;
+	one(event: 'route-change', fn: (event: Event<Route>, req: Request) => any): this;
+	one(event: 'route', fn: (event: Event<Route>, req: Request) => any): this;
+	one(event: 'route-end', fn: (event: Event<Route>, req: Request) => any): this;
+	one(events: string, fn: EventListener): this;
+
 	static readonly Region: typeof Region;
 }
 
@@ -302,6 +311,16 @@ export default class Pilot extends Emitter {
 	on(event: 'reload', fn: (event: Event<Pilot>) => any): this;
 	on(event: 'reloadend', fn: (event: Event<Pilot, {cancelled: boolean}>) => any): this;
 	on(events: string, fn: EventListener): this;
+
+	one(event: 'before-route', fn: (event: Event<Pilot, PilotNavDetails>, req: Request) => any): this;
+	one(event: 'error', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, error: unknown) => any): this;
+	one(event: 'route-fail', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, currentRoute: Route, error: unknown) => any): this;
+	one(event: 'route', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, currentRoute: Route) => any): this;
+	one(event: 'route-end', fn: (event: Event<Pilot, PilotNavDetails>, req: Request, currentRoute: Route) => any): this;
+	one(event: 'beforereload', fn: (event: Event<Pilot>) => any): this;
+	one(event: 'reload', fn: (event: Event<Pilot>) => any): this;
+	one(event: 'reloadend', fn: (event: Event<Pilot, {cancelled: boolean}>) => any): this;
+	one(events: string, fn: EventListener): this;
 
 	static create(map: PilotRouteMap): Pilot;
 
