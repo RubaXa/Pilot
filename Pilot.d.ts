@@ -292,6 +292,7 @@ export default class Pilot extends Emitter {
 	model: Object;
 	request: Request;
 	activeUrl: Url;
+	activeRequest?: Request;
 	routes: Route[];
 
 	constructor(map: PilotRouteMap);
