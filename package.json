@@ -19,6 +19,7 @@
   },
   "description": "Multifunction JavaScript router.",
   "main": "Pilot.js",
+  "types": "Pilot.d.ts",
   "scripts": {
     "test": "jest --coverage && npm run lint",
     "lint": "eslint src",
