@@ -189,6 +189,8 @@ declare module 'pilotjs' {
 		export type Model = Record<string, Object | undefined>;
 
 		class Route extends Emitter {
+			id: string;
+			active?: boolean;
 			regions: string[];
 			router: Pilot;
 			model: Model;
@@ -335,6 +337,8 @@ declare module 'pilotjs' {
 	class Pilot extends Emitter {
 		model: Object;
 		request: Pilot.Request;
+		route?: Pilot.Route;
+		activeRoute?: Pilot.Route;
 		activeUrl: Pilot.Url;
 		activeRequest?: Pilot.Request;
 		routes: Pilot.Route[];
