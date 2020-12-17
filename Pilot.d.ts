@@ -125,7 +125,8 @@ declare module 'pilotjs' {
 
 		// ==== ./src/querystring.js ====
 
-		export type Query = Record<string, string | string[] | undefined>;
+		export type QueryItem = string | number | symbol;
+		export type Query = Record<QueryItem, QueryItem | QueryItem[] | undefined>;
 
 		interface QueryString {
 			parse(search: string): Query;
@@ -153,7 +154,7 @@ declare module 'pilotjs' {
 			redirectHref?: string;
 			alias?: string;
 
-			constructor(url: string | Url, referrer?: string, router?: string);
+			constructor(url: string | URL, referrer?: string, router?: string);
 
 			clone(): Request;
 
@@ -205,9 +206,9 @@ declare module 'pilotjs' {
 
 			protected _initMixins();
 
-			handling(url: Url, req: Request, currentRoute: Route, model: Record<string, Object | undefined>);
+			handling(url: URL, req: Request, currentRoute: Route, model: Record<string, Object | undefined>);
 
-			match(URL: Url, req: Request): boolean;
+			match(URL: URL, req: Request): boolean;
 
 			fetch(req: Request): Promise<Object>;
 
@@ -255,7 +256,7 @@ declare module 'pilotjs' {
 
 		// ==== ./src/url.js ====
 
-		class Url {
+		class URL {
 			protocol: string;
 			protocolSeparator: string;
 			credhost: string;
@@ -275,26 +276,26 @@ declare module 'pilotjs' {
 			params: Record<string, string | undefined>;
 			hash: string;
 
-			constructor(url: string, base: string | Url | Location);
+			constructor(url: string, base?: string | URL | Location);
 
-			setQuery(query: string | Query, remove?: boolean | string[]): Url;
+			setQuery(query: string | Query, remove?: boolean | string[]): URL;
 
-			addToQuery(query: Query): Url;
+			addToQuery(query: Query): URL;
 
-			removeFromQuery(query: string | string[]): Url;
+			removeFromQuery(query: string | string[]): URL;
 
-			update(): Url;
+			update(): URL;
 
 			toString(): string;
 
-			static parse(url: string): Url;
+			static parse(url: string): URL;
 
 			static readonly parseQueryString: QueryString["parse"];
 			static readonly stringifyQueryString: QueryString["stringify"];
 
 			static toMatcher(pattern: string | RegExp): RegExp;
 
-			static match(pattern: string | RegExp, url: string | Url): Record<string, string | undefined>;
+			static match(pattern: string | RegExp, url: string | URL): Record<string, string | undefined>;
 		}
 
 		// ==== ./src/pilot.js ====
@@ -339,7 +340,7 @@ declare module 'pilotjs' {
 		request: Pilot.Request;
 		route?: Pilot.Route;
 		activeRoute?: Pilot.Route;
-		activeUrl: Pilot.Url;
+		activeUrl: Pilot.URL;
 		activeRequest?: Pilot.Request;
 		routes: Pilot.Route[];
 
@@ -349,7 +350,7 @@ declare module 'pilotjs' {
 
 		go(id: string, params?: Record<string, string | undefined>, query?: Pilot.Query | 'inherit', details?: Object): Promise<any>;
 
-		nav(href: string | Pilot.Url | Request, details?: Pilot.PilotNavDetails): Promise<any>;
+		nav(href: string | Pilot.URL | Request, details?: Pilot.PilotNavDetails): Promise<any>;
 
 		listenFrom(target: HTMLElement, options: Pilot.PilotListenOptions);
 
