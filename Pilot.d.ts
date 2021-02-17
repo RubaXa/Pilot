@@ -340,9 +340,8 @@ declare module 'pilotjs' {
 		request: Pilot.Request;
 		route?: Pilot.Route;
 		activeRoute?: Pilot.Route;
-		// @deprecated use Pilot.url
 		activeUrl: Pilot.URL;
-		url: Pilot.URL;
+		url?: Pilot.URL;
 		activeRequest?: Pilot.Request;
 		routes: Pilot.Route[];
 

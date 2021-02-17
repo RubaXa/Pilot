@@ -107,7 +107,7 @@ Current Request.
 
 ---
 
-#### url:`URL`
+#### activeUrl:`URL`
 Active/Current URL.
 
 ---
