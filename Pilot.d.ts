@@ -273,7 +273,7 @@ declare module 'pilotjs' {
 			segment2: string;
 			search: string;
 			query: Query;
-			params: Record<string, string | undefined>;
+			params: Record<string, string | string[] | undefined>;
 			hash: string;
 
 			constructor(url: string, base?: string | URL | Location);
@@ -341,6 +341,7 @@ declare module 'pilotjs' {
 		route?: Pilot.Route;
 		activeRoute?: Pilot.Route;
 		activeUrl: Pilot.URL;
+		url?: Pilot.URL;
 		activeRequest?: Pilot.Request;
 		routes: Pilot.Route[];
 
