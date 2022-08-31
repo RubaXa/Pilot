@@ -4,7 +4,7 @@
   "devDependencies": {
     "@types/jest": "23.3.13",
     "amdclean": "^2.7.0",
-    "babel-jest": "^23.6.0",
+    "babel-jest": "^29.0.1",
     "babel-plugin-transform-amd-to-commonjs": "1.2.0",
     "babel-plugin-transform-string-literal-replace": "^1.0.2",
     "eslint": "^5.16.0",
@@ -14,7 +14,7 @@
     "grunt-contrib-uglify": "^1.0.0",
     "grunt-qunit-istanbul": "^1.0.0",
     "grunt-version": "*",
-    "jest": "^23.6.0",
+    "jest": "^29.0.1",
     "request": "^2.65.0"
   },
   "description": "Multifunction JavaScript router.",
