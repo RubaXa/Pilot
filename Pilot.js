@@ -1491,7 +1491,9 @@ define('src/route',[
 					})
 				}
 			});
-			snapshot.request.route = snapshot;
+			if (snapshot.request) {
+				snapshot.request.route = snapshot;
+			}
 
 			return snapshot;
 		}
@@ -1882,7 +1884,7 @@ define('src/pilot.js',[
 				_this.activeUrl = url;
 				_this.activeRequest = req;
 				_this.activeRoute = currentRoute;
-				_this.previuosRoute = _this.route && _this.route.snapshot();
+				_this.previousRoute = _this.route && _this.route.snapshot();
 
 				if (!_this.route) {
 					_this.route = currentRoute;
