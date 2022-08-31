@@ -573,7 +573,7 @@ describe('Pilot', () => {
 			}),
 			detach: () => events.forEach((event) => {
 				if (handlers[event]) {
-					handlers[event] && app.off(event, handlers[event]);
+					app.off(event, handlers[event]);
 					delete handlers[event];
 				}
 			}),
