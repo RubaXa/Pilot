@@ -350,6 +350,7 @@ declare module 'pilotjs' {
 		url?: Pilot.URL;
 		activeRequest?: Pilot.Request;
 		routes: Pilot.Route[];
+		previousRoute?: Readonly<Pilot.Route>;
 
 		constructor(map: Pilot.PilotRouteMap);
 
