@@ -163,6 +163,8 @@ declare module 'pilotjs' {
 			redirectTo(href: string, interrupt?: boolean);
 
 			toString(): string;
+
+			snapshot(): Readonly<Request>;
 		}
 
 		// ==== ./src/route.js ====
@@ -197,6 +199,8 @@ declare module 'pilotjs' {
 			model: Model;
 			parentId?: string;
 			parentRoute?: Route;
+			readonly request?: Request;
+			readonly params: Record<string, string | undefined>;
 
 			constructor(options: RouteOptions, router: Pilot);
 
@@ -215,6 +219,8 @@ declare module 'pilotjs' {
 			getUrl(params: Record<string, string | undefined>, query: Query | 'inherit'): string;
 
 			is(id: string): boolean;
+
+			snapshot(): Readonly<Route>;
 
 			on(event: 'before-init', fn: (event: Emitter.Event<Route>) => any): this;
 			on(event: 'init', fn: (event: Emitter.Event<Route>) => any): this;

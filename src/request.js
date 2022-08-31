@@ -62,6 +62,17 @@ define(['./url', './querystring'], function (/** URL */URL, /** queryString */qu
 
 		toString: function () {
 			return this.href;
+		},
+
+		snapshot: function () {
+			return Object.create(this, {
+				query: {
+					value: Object.assign({}, this.query)
+				},
+				params: {
+					value: Object.assign({}, this.params)
+				}
+			});
 		}
 	};
 
