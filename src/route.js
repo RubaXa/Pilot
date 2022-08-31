@@ -149,7 +149,8 @@ define([
 		/**
 		 * Параметры маршрута
 		 * @type {Object}
-		 * @private
+		 * @public
+		 * @readonly
 		 */
 		this.params = {};
 
@@ -439,6 +440,33 @@ define([
 			}
 
 			return this.id === id;
+		},
+
+		snapshot: function () {
+			var snapshot = Object.create(this, {
+				params: {
+					value: Object.assign({}, this.params)
+				},
+				request: {
+					value: this.request && this.request.snapshot()
+				},
+				url: {
+					value: Object.assign({}, this.url)
+				},
+				parentRoute: {
+					value: this.parentRoute && this.parentRoute.snapshot()
+				},
+				aliases: {
+					value: this.aliases.map(function (alias) {
+						return Object.assign({}, alias)
+					})
+				}
+			});
+			if (snapshot.request) {
+				snapshot.request.route = snapshot;
+			}
+
+			return snapshot;
 		}
 	};
 

@@ -5,7 +5,7 @@
     "@types/jest": "23.3.13",
     "amdclean": "^2.7.0",
     "babel-jest": "^23.6.0",
-    "babel-plugin-transform-amd-to-commonjs": "^1.2.0",
+    "babel-plugin-transform-amd-to-commonjs": "1.2.0",
     "babel-plugin-transform-string-literal-replace": "^1.0.2",
     "eslint": "^5.16.0",
     "grunt": "^1.0.1",

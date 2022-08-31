@@ -1008,6 +1008,17 @@ define('src/request',['./url', './querystring'], function (/** URL */URL, /** qu
 
 		toString: function () {
 			return this.href;
+		},
+
+		snapshot: function () {
+			return Object.create(this, {
+				query: {
+					value: Object.assign({}, this.query)
+				},
+				params: {
+					value: Object.assign({}, this.params)
+				}
+			});
 		}
 	};
 
@@ -1167,7 +1178,8 @@ define('src/route',[
 		/**
 		 * Параметры маршрута
 		 * @type {Object}
-		 * @private
+		 * @public
+		 * @readonly
 		 */
 		this.params = {};
 
@@ -1457,6 +1469,31 @@ define('src/route',[
 			}
 
 			return this.id === id;
+		},
+
+		snapshot: function () {
+			var snapshot = Object.create(this, {
+				params: {
+					value: Object.assign({}, this.params)
+				},
+				request: {
+					value: this.request && this.request.snapshot()
+				},
+				url: {
+					value: Object.assign({}, this.url)
+				},
+				parentRoute: {
+					value: this.parentRoute && this.parentRoute.snapshot()
+				},
+				aliases: {
+					value: this.aliases.map(function (alias) {
+						return Object.assign({}, alias)
+					})
+				}
+			});
+			snapshot.request.route = snapshot;
+
+			return snapshot;
 		}
 	};
 
@@ -1845,6 +1882,7 @@ define('src/pilot.js',[
 				_this.activeUrl = url;
 				_this.activeRequest = req;
 				_this.activeRoute = currentRoute;
+				_this.previuosRoute = _this.route && _this.route.snapshot();
 
 				if (!_this.route) {
 					_this.route = currentRoute;

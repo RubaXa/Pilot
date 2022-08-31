@@ -192,6 +192,7 @@ define([
 				_this.activeUrl = url;
 				_this.activeRequest = req;
 				_this.activeRoute = currentRoute;
+				_this.previousRoute = _this.route && _this.route.snapshot();
 
 				if (!_this.route) {
 					_this.route = currentRoute;

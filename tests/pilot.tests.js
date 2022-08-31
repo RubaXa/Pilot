@@ -366,6 +366,127 @@ describe('Pilot', () => {
 		expect(log).toEqual([{type: 'beforereload'}, {type: 'reloadend', details: {cancelled: true}}]);
 	});
 
+	test('previous route', async () => {
+		const app = createMockApp();
+		const previousRouteAt = {};
+		const {attach, detach} = setupHandlersFor(app, (event) => () => {
+			previousRouteAt[event] = app.previousRoute
+		}, ['before-route', 'route', 'route-end']);
+
+		attach();
+
+		await app.go('#idx');
+
+		expect(previousRouteAt['before-route']).toBeUndefined();
+		expect(previousRouteAt['route']).toBeUndefined();
+		expect(previousRouteAt['route-end']).toBeUndefined();
+
+		await app.nav('/xxx/bar');
+
+		expect(previousRouteAt['before-route']).toBeDefined();
+		expect(previousRouteAt['before-route'].id).toEqual('#idx');
+		expect(previousRouteAt['before-route'].is('#idx')).toBeTruthy();
+
+		expect(previousRouteAt['route']).toBeDefined();
+		expect(previousRouteAt['route'].id).toEqual('#idx');
+		expect(previousRouteAt['route'].is('#idx')).toBeTruthy();
+
+		expect(previousRouteAt['route-end']).toBeDefined();
+		expect(previousRouteAt['route-end'].id).toEqual('#idx');
+		expect(previousRouteAt['route-end'].is('#idx')).toBeTruthy();
+
+		await app.nav('/yyy/baz');
+
+		expect(previousRouteAt['before-route']).toBeDefined();
+		expect(previousRouteAt['before-route'].id).toEqual('#bar');
+		expect(previousRouteAt['before-route'].is('#bar')).toBeTruthy();
+
+		expect(previousRouteAt['route']).toBeDefined();
+		expect(previousRouteAt['route'].id).toEqual('#bar');
+		expect(previousRouteAt['route'].is('#bar')).toBeTruthy();
+
+		expect(previousRouteAt['route-end']).toBeDefined();
+		expect(previousRouteAt['route-end'].id).toEqual('#bar');
+		expect(previousRouteAt['route-end'].is('#bar')).toBeTruthy();
+
+		detach();
+	});
+
+	test('previous route: same route different params', async () => {
+		const app = createMockApp();
+		const previousRoutes = [];
+		const {attach, detach} = setupHandlersFor(app, () => () => {
+			previousRoutes.push(app.previousRoute);
+		}, ['route']);
+
+		await app.go('#letters', {type: 'inbox'});
+		attach();
+		await app.go('#letters', {type: 'spam'});
+		await app.go('#idx');
+		detach();
+
+		const [first, second] = previousRoutes;
+
+		expect(first).toBeDefined();
+		expect(second).toBeDefined();
+
+		expect(first.is('#letters')).toBeTruthy();
+		expect(second.is('#letters')).toBeTruthy();
+
+		expect(first.params.type).toEqual('inbox');
+		expect(second.params.type).toEqual('spam');
+	});
+
+	test('previous route: query', async () => {
+		const app = createMockApp();
+		let previousRoute;
+		const {attach, detach} = setupHandlersFor(app, () => () => {
+			previousRoute = app.previousRoute;
+		}, ['route']);
+
+		await app.nav('/messages/inbox?key=value');
+		attach();
+		await app.go('#letters', {type: 'spam'});
+		detach();
+
+		expect(previousRoute).toBeDefined();
+		expect(previousRoute.is('#letters')).toBeTruthy();
+		expect(previousRoute.params.type).toEqual('inbox');
+		expect(previousRoute.request.query.key).toEqual('value');
+
+		await app.go('#idx');
+
+		expect(previousRoute).toBeDefined();
+		expect(previousRoute.is('#letters')).toBeTruthy();
+		expect(previousRoute.params.type).toEqual('inbox');
+		expect(previousRoute.request.query.key).toEqual('value');
+	});
+
+	test('previous route: getUrl', async () => {
+		const app = createMockApp();
+		let previousRoute;
+		const {attach, detach} = setupHandlersFor(app, () => () => {
+			previousRoute = app.previousRoute;
+		}, ['route']);
+
+		await app.go('#letters', {type: 'inbox'});
+		attach();
+		await app.nav('/');
+		detach();
+
+		const {params} = previousRoute;
+
+		expect(previousRoute).toBeDefined();
+		expect(previousRoute.is('#letters')).toBeTruthy();
+		expect(previousRoute.getUrl(params)).toEqual('/messages/inbox/');
+
+		await app.nav('/?key=value');
+
+		const {request: {query}} = app;
+
+		expect(previousRoute.getUrl(params, query)).toEqual('/messages/inbox/?key=value');
+	});
+
 	test.skip('listenFrom', async () => { // Проходит сам по себе, но ловит асинхронную ошибку от model/fail, пока скипаем
 		let navigated = 0;
 		const handleRoute = function () {
@@ -441,5 +562,21 @@ describe('Pilot', () => {
 				resolve(time);
 			}, time)
 		})
+	}
+
+	function setupHandlersFor(app, callBackFor, events) {
+		const handlers = {};
+
+		return {
+			attach: () => events.forEach((event) => {
+				app.on(event, handlers[event] = callBackFor(event));
+			}),
+			detach: () => events.forEach((event) => {
+				if (handlers[event]) {
+					app.off(event, handlers[event]);
+					delete handlers[event];
+				}
+			}),
+		};
 	}
 });
