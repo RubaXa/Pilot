@@ -146,7 +146,7 @@ declare module 'pilotjs' {
 			pathname: string;
 			search: string;
 			query: Query;
-			params: Record<string, string | undefined>;
+			params: Record<string, string | number | undefined>;
 			hash: string;
 			route: Route;
 			router: Pilot;
