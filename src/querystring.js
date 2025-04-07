@@ -25,11 +25,88 @@ define([], function () {
 		}
 	}
 
+	/**
+	 * @module Pilot.queryString
+	 */
+	var queryStringNew = /** @lends queryString */{
+		/**
+		 * Parse query string
+		 * @param   {string} search
+		 * @returns {Object}
+		 */
+		parse: function (search) {
+			if (/^[?#]/.test(search)) {
+				search = search.substr(1);
+			}
+
+			search = search.trim();
+
+			const entries = Array.from(new URLSearchParams(search).entries()).map(function (entry) {
+				const k = entry[0];
+				const v = entry[1];
+
+				return [k.replace('[]', ''), v];
+			});
+
+			const aggr = {};
+
+			for (let i = 0; i < entries.length; i++) {
+				const entry = entries[i];
+				const k = entry[0];
+				const v = entry[1];
+
+				if (!aggr[k]) {
+					aggr[k] = v;
+					continue;
+				}
+
+				if (Array.isArray(aggr[k])) {
+					aggr[k].push(v);
+					continue;
+				}
+
+				aggr[k] = [aggr[k], v];
+			}
+
+			return aggr;
+		},
+
+
+		/**
+		 * Stringify query object
+		 * @param   {Object}  query
+		 * @returns {string}
+		 */
+		stringify: function (query) {
+			if (!query || !(query instanceof Object)) {
+				return '';
+			}
+
+			const objectParams = [];
+			const params = new URLSearchParams();
+			Object.entries(query).forEach(function (entry) {
+				const k = entry[0];
+				const v = entry[1];
+
+				if (typeof v !== 'string') {
+					objectParams.push(_stringifyParam(k, v));
+				} else {
+					params.append(k, v);
+				}
+			});
+
+			if (objectParams.length === 0) {
+				return params.toString();
+			}
+
+			return [params.toString(), objectParams.join('&')].filter(Boolean).join('&');
+		}
+	};
 
 	/**
 	 * @module Pilot.queryString
 	 */
-	var queryString = /** @lends queryString */{
+	var queryStringOld = /** @lends queryString */{
 		/**
 		 * Parse query string
 		 * @param   {string} search
@@ -105,7 +182,10 @@ define([], function () {
 		}
 	};
 
+	var hasUrlSearchParams = !!window.URLSearchParams;
+
+	var queryString = hasUrlSearchParams ? queryStringNew : queryStringOld;
 
 	// Export
-	return queryString;
+	return Object.assign(queryString, {'new': queryStringNew, 'old': queryStringOld});
 });
