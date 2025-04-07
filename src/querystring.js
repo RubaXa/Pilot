@@ -41,19 +41,19 @@ define([], function () {
 
 			search = search.trim();
 
-			const entries = Array.from(new URLSearchParams(search).entries()).map(function (entry) {
-				const k = entry[0];
-				const v = entry[1];
+			var entries = Array.from(new URLSearchParams(search).entries()).map(function (entry) {
+				var k = entry[0];
+				var v = entry[1];
 
 				return [k.replace('[]', ''), v];
 			});
 
-			const aggr = {};
+			var aggr = {};
 
-			for (let i = 0; i < entries.length; i++) {
-				const entry = entries[i];
-				const k = entry[0];
-				const v = entry[1];
+			for (var i = 0; i < entries.length; i++) {
+				var entry = entries[i];
+				var k = entry[0];
+				var v = entry[1];
 
 				if (!aggr[k]) {
 					aggr[k] = v;
@@ -82,11 +82,11 @@ define([], function () {
 				return '';
 			}
 
-			const objectParams = [];
-			const params = new URLSearchParams();
+			var objectParams = [];
+			var params = new URLSearchParams();
 			Object.entries(query).forEach(function (entry) {
-				const k = entry[0];
-				const v = entry[1];
+				var k = entry[0];
+				var v = entry[1];
 
 				if (typeof v !== 'string') {
 					objectParams.push(_stringifyParam(k, v));
