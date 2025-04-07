@@ -6,7 +6,7 @@ define([
 	'./request',
 	'./route',
 	'./status',
-	'./queryString'
+	'./querystring'
 ], function (
 	/** Emitter */Emitter,
 	/** URL */URL,
