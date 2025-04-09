@@ -14,7 +14,7 @@
     "grunt-contrib-uglify": "^1.0.0",
     "grunt-qunit-istanbul": "^1.0.0",
     "grunt-version": "*",
-    "jest": "^23.6.0",
+    "jest": "^29.7.0",
     "request": "^2.65.0"
   },
   "description": "Multifunction JavaScript router.",
