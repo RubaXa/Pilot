@@ -338,6 +338,7 @@ declare module 'pilotjs' {
 			autoStart?: boolean;
 			filter?: PilotListenFilter;
 			replaceState?: boolean;
+			isHijackableClick?: (evt: Event) => boolean;
 		}
 	}
 
