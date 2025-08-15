@@ -7,7 +7,7 @@
     "babel-jest": "^23.6.0",
     "babel-plugin-transform-amd-to-commonjs": "1.2.0",
     "babel-plugin-transform-string-literal-replace": "^1.0.2",
-    "eslint": "^5.16.0",
+    "eslint": "^9.33.0",
     "grunt": "^1.0.1",
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-contrib-requirejs": "^1.0.0",
