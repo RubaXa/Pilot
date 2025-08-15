@@ -296,6 +296,14 @@ define([
 			var _this = this;
 			var logger = options.logger;
 			var filter = options.filter;
+			var isHijackableClick = options.isHijackableClick || (function (evt) {
+				return !(
+					evt.metaKey ||
+					evt.ctrlKey ||
+					evt.button === MOUSE_BUTTON_SECONDARY ||
+					evt.button === MOUSE_BUTTON_AUXILIARY
+				);
+			});
 			var popStateNav = function () {
 				_this.nav(location.href, {initiator: 'popstate'});
 			};
@@ -342,12 +350,7 @@ define([
 						url &&
 						hostnameRegExp.test(url) &&
 						!evt.defaultPrevented &&
-						!(
-							evt.metaKey ||
-							evt.ctrlKey ||
-							evt.button === MOUSE_BUTTON_SECONDARY ||
-							evt.button === MOUSE_BUTTON_AUXILIARY
-						) &&
+						isHijackableClick(evt) &&
 						(!filter || filter(url))
 					) {
 						evt.preventDefault();
