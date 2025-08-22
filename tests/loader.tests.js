@@ -10,7 +10,7 @@ function sleep(milliseconds) {
 }
 
 // Этот загрузчик любит спать и писать об этом в лог
-async function createSleepyLoggingLoader(log, {persist} = {persist: false}) {
+async function createSleepyLoggingLoader(log, {persist, forceParallel} = {persist: false, forceParallel: false}) {
 	const loader = new Loader({
 		// Этот "переход по маршруту" будет просто ждать нужное кол-во милилсекунд
 		// Ещё он может зависнуть, т.е. вернуть промис, который не разрезолвится никогда
@@ -24,6 +24,7 @@ async function createSleepyLoggingLoader(log, {persist} = {persist: false}) {
 		}
 	}, {
 		persist,
+		forceParallel,
 		processing(request, action, models) {
 			log.push(models.data);
 		}
@@ -246,5 +247,17 @@ describe('Loader', () => {
 		await loader.dispatch({timeout: 40, priority: Loader.PRIORITY_HIGH});
 
 		expect(log).toEqual(['timeout 40']);
-	})
+	});
+
+	test('dispatch high after low priority with forceParallel', async () => {
+		const log = [];
+		const loader = await createSleepyLoggingLoader(log, {forceParallel: true});
+
+		loader.dispatch({timeout: 20, priority: Loader.PRIORITY_LOW});
+		loader.dispatch({timeout: 10, priority: Loader.PRIORITY_HIGH});
+
+		await sleep(100);
+
+		expect(log).toEqual(['timeout 10', 'timeout 20']);
+	});
 });

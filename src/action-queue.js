@@ -1,6 +1,6 @@
 define(['Emitter'], function(Emitter) {
 
-	function ActionQueue() {
+	function ActionQueue(options) {
 		Emitter.apply(this);
 
 		this._queue = [];
@@ -8,6 +8,11 @@ define(['Emitter'], function(Emitter) {
 		this._id = 0;
 		this._lastQueueItem = void 0;
 		this._endedCount = -1;
+
+		this._options = {
+			// Включает режим выполнения всех без исключения экшнов без блокировок
+			forceParallel: options.forceParallel
+		}
 	}
 
 	ActionQueue.PRIORITY_HIGH = 1;
@@ -20,7 +25,7 @@ define(['Emitter'], function(Emitter) {
 			// TODO: arg types check
 
 			// Проставляем по умолчанию наивысший приоритет
-			if (action.priority == null) {
+			if (action.priority == null || this._options.forceParallel) {
 				action.priority = ActionQueue.PRIORITY_HIGH;
 			}
 
